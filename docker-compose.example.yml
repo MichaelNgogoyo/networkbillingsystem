@@ -9,7 +9,7 @@ services:
     ports:
       - "80:80"
     environment:
-      TZ: Africa/Nairobi
+      TZ: ${TZ:-Africa/Nairobi}
     depends_on:
       - mysql
 
@@ -17,10 +17,10 @@ services:
     container_name: mysql
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: "Mackavelli2#"
-      MYSQL_DATABASE: "nuxbill"
-      MYSQL_USER: "nuxbill"
-      MYSQL_PASSWORD: "Mackavelli2#"
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-nuxbill}
+      MYSQL_USER: ${MYSQL_USER:-nuxbill}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
 
