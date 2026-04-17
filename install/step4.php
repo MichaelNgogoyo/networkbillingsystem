@@ -6,7 +6,14 @@
  **/
 
 //error_reporting (0);
-$appurl = $_POST['appurl'];
+$appurl = trim($_POST['appurl']);
+if (empty($appurl)) {
+    $scheme = (((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+            (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ||
+            (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)) ? 'https' : 'http');
+    $appurl = $scheme . '://' . $_SERVER['HTTP_HOST'];
+}
+$appurl = rtrim($appurl, '/');
 $db_host = $_POST['dbhost'];
 $db_user = $_POST['dbuser'];
 $db_pass = $_POST['dbpass'];
@@ -28,10 +35,7 @@ if ($cn == '1') {
     if (isset($_POST['radius']) && $_POST['radius'] == 'yes') {
         $input = '<?php
 
-$protocol = (!empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off" || $_SERVER["SERVER_PORT"] == 443) ? "https://" : "http://";
-$host = $_SERVER["HTTP_HOST"];
-$baseDir = rtrim(dirname($_SERVER["SCRIPT_NAME"]), "/\\\\");
-define("APP_URL", $protocol . $host . $baseDir);
+    define("APP_URL", "' . $appurl . '");
 
 // Live, Dev, Demo
 $_app_stage = "Live";
@@ -59,10 +63,7 @@ if($_app_stage!="Live"){
 }';
     } else {
         $input = '<?php
-$protocol = (!empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off" || $_SERVER["SERVER_PORT"] == 443) ? "https://" : "http://";
-$host = $_SERVER["HTTP_HOST"];
-$baseDir = rtrim(dirname($_SERVER["SCRIPT_NAME"]), "/\\\\");
-define("APP_URL", $protocol . $host . $baseDir);
+    define("APP_URL", "' . $appurl . '");
 
 // Live, Dev, Demo
 $_app_stage = "Live";

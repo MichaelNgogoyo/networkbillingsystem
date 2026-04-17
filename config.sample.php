@@ -1,7 +1,8 @@
 <?php
 
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || 
-             (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)) ? "https://" : "http://";
+$protocol = (((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+             (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ||
+             (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443))) ? "https://" : "http://";
 
 // Check if HTTP_HOST is set, otherwise use a default value or SERVER_NAME
 $host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : (isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'localhost');

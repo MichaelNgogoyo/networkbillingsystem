@@ -94,7 +94,10 @@ try {
                 To Login Admin Portal:<br>
                 Use this link -
                 <?php
-                $cururl = (((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+                $scheme = (((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+                    (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ||
+                    (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)) ? 'https' : 'http');
+                $cururl = $scheme . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
                 $appurl = str_replace('/install/step5.php', '', $cururl);
                 $appurl = str_replace('/system', '', $appurl);
                 echo '<a href="' . $appurl . '/admin">' . $appurl . '/admin</a>';
