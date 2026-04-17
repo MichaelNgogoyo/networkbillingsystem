@@ -34,6 +34,7 @@ jobs:
           rsync -az --delete \
             --exclude '.git' \
             --exclude '.github' \
+            --exclude '.runtime' \
             ./ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/${{ secrets.VPS_USER }}/networkbillingsystem/"
 
       - name: Deploy on VPS
