@@ -4,6 +4,10 @@ set -euo pipefail
 APP_DIR="/home/michael/networkbillingsystem"
 COMPOSE_BIN="${HOME}/.local/bin/docker-compose"
 
+# Use classic builder on older VPS Docker stacks where buildx is outdated.
+export DOCKER_BUILDKIT=0
+export COMPOSE_DOCKER_CLI_BUILD=0
+
 if [[ ! -d "$APP_DIR" ]]; then
   echo "App directory not found: $APP_DIR" >&2
   exit 1
