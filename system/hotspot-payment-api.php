@@ -127,10 +127,11 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
         $durationSeconds = parseDurationToSeconds($duration);
         $expiryTime = time() + $durationSeconds;
         
-        // Create MikroTik hotspot user
+        // Create MikroTik hotspot user AND log them in
         try {
             $router = ORM::for_table('tbl_routers')->where('ip', '192.168.88.1')->find_one();
             if ($router) {
+                error_log('Connecting to MikroTik: ' . $router['ip_port']);
                 $client = Mikrotik::getClient($router['ip_port'] ?? '192.168.88.1:8728', $router['username'] ?? 'admin', $router['password'] ?? '1234');
                 if ($client) {
                     // Create a simple trial profile if not exists
@@ -145,8 +146,19 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
                         'fullname' => 'Trial User - ' . $phone
                     ];
                     
+                    error_log('Creating MikroTik user: ' . $trialUser);
                     Mikrotik::addHotspotUser($client, $plan, $customer);
+                    error_log('MikroTik user created successfully: ' . $trialUser);
+                    
+                    // Now login the user from the server side
+                    error_log('Logging in MikroTik user: ' . $trialUser . ' from IP: ' . $ip . ' MAC: ' . $mac);
+                    Mikrotik::logMeIn($client, $trialUser, $trialPass, $ip, $mac);
+                    error_log('MikroTik user logged in successfully: ' . $trialUser);
+                } else {
+                    error_log('Failed to connect to MikroTik client');
                 }
+            } else {
+                error_log('Router configuration not found for IP 192.168.88.1');
             }
         } catch (Exception $e) {
             // Log error but don't fail - user can still login
