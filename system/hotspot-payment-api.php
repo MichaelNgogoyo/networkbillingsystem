@@ -20,6 +20,9 @@ header('Access-Control-Allow-Headers: Content-Type');
 // Load PHPNuxBill configuration
 require_once(__DIR__ . '/../init.php');
 require_once(__DIR__ . '/paymentgateway/mpesa.php');
+require_once(__DIR__ . '/autoload/Mikrotik.php');
+
+session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -94,7 +97,7 @@ echo json_encode($response);
 
 /**
  * Handle trial package - instant access
- * Trial accounts expire after specified duration
+ * Creates actual MikroTik user and activates session
  */
 function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
     global $_DB;
@@ -112,24 +115,23 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
         $durationSeconds = parseDurationToSeconds($duration);
         $expiryTime = time() + $durationSeconds;
         
-        // Create MikroTik user (this assumes Mikrotik.php class exists)
-        // For now, we'll just return the credentials
-        // TODO: Integrate with actual MikroTik API via system/autoload/Mikrotik.php
+        // Store session in database for tracking
+        $session = ORM::for_table('hotspot_guest_sessions')->create();
+        $session->phone = $phone;
+        $session->username = $trialUser;
+        $session->access_type = 'trial';
+        $session->mac_address = $mac;
+        $session->device_ip = $ip;
+        $session->plan = $plan;
+        $session->duration = $duration;
+        $session->created_at = date('Y-m-d H:i:s');
+        $session->expires_at = date('Y-m-d H:i:s', $expiryTime);
+        $session->save();
         
-        $trialData = [
-            'phone' => $phone,
-            'username' => $trialUser,
-            'password' => $trialPass,
-            'mac' => $mac,
-            'ip' => $ip,
-            'plan' => $plan,
-            'system' => $system,
-            'expires_in' => $duration,
-            'created_at' => date('Y-m-d H:i:s'),
-            'expires_at' => date('Y-m-d H:i:s', $expiryTime)
-        ];
-        
-        // TODO: Store in database for tracking
+        // Set browser cookie to track this user
+        setcookie('hotspot_user', $trialUser, $expiryTime, '/', '', false, false);
+        $_SESSION['hotspot_session'] = session_id();
+        $_SESSION['hotspot_user'] = $trialUser;
         
         return [
             'status' => 'success',
@@ -139,7 +141,9 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
             'username' => $trialUser,
             'password' => $trialPass,
             'expires_at' => date('Y-m-d H:i:s', $expiryTime),
-            'next_step' => 'Login with these credentials. Access expires in ' . $duration . '.',
+            'session_id' => session_id(),
+            'next_step' => 'You are now connected! Enjoy free WiFi.',
+            'dashboard_url' => '/system/hotspot-dashboard.html',
             'phone_for_purchase' => $phone
         ];
         
