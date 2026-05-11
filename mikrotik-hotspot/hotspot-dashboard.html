@@ -475,7 +475,7 @@
                 const res = await fetch('/system/hotspot-payment-api.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `phone=${encodeURIComponent(phone)}&package=${encodeURIComponent(JSON.stringify({plan:"Trial 10 Minutes",price:0,duration:"10 minutes",system:"unlimited",usage:"General"}))}&device_mac=${encodeURIComponent(getCookie('mikrotik_mac') || 'unknown')}&device_ip=${encodeURIComponent(getCookie('mikrotik_ip') || 'unknown')}&router=hotspot`
+                    body: `phone=${encodeURIComponent(phone)}&package=${encodeURIComponent(JSON.stringify({plan:"Trial 10 Minutes",price:0,duration:"10 minutes",system:"unlimited",usage:"General"}))}&device_mac=${encodeURIComponent(getCookie('mikrotik_mac') || 'aa:bb:cc:dd:ee:ff')}&device_ip=${encodeURIComponent(getCookie('mikrotik_ip') || '0.0.0.0')}&router=hotspot`
                 });
                 
                 const data = await res.json();
@@ -485,8 +485,31 @@
                     document.cookie = `hotspot_user=${data.username}; path=/`;
                     document.cookie = `hotspot_session=${data.session_id}; path=/`;
                     sessionStorage.setItem('hotspot_session', JSON.stringify(data));
-                    showAlert('Trial activated! You have ' + data.duration + ' of free WiFi', 'success');
-                    setTimeout(() => showConnected(), 1000);
+                    showAlert('Trial activated! Logging you in...', 'success');
+                    
+                    // Auto-login to MikroTik with received credentials
+                    setTimeout(() => {
+                        // Try to login via MikroTik's captive portal login
+                        const loginForm = document.createElement('form');
+                        loginForm.method = 'post';
+                        loginForm.action = '/login'; // MikroTik's captive portal login endpoint
+                        loginForm.style.display = 'none';
+                        
+                        const userField = document.createElement('input');
+                        userField.type = 'hidden';
+                        userField.name = 'username';
+                        userField.value = data.username;
+                        
+                        const passField = document.createElement('input');
+                        passField.type = 'hidden';
+                        passField.name = 'password';
+                        passField.value = data.password;
+                        
+                        loginForm.appendChild(userField);
+                        loginForm.appendChild(passField);
+                        document.body.appendChild(loginForm);
+                        loginForm.submit();
+                    }, 500);
                 } else {
                     showAlert(data.message, 'error');
                 }

@@ -119,6 +119,32 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
         $durationSeconds = parseDurationToSeconds($duration);
         $expiryTime = time() + $durationSeconds;
         
+        // Create MikroTik hotspot user
+        try {
+            $router = ORM::for_table('tbl_routers')->where('ip', '192.168.88.1')->find_one();
+            if ($router) {
+                $client = Mikrotik::getClient($router['ip_port'] ?? '192.168.88.1:8728', $router['username'] ?? 'admin', $router['password'] ?? '1234');
+                if ($client) {
+                    // Create a simple trial profile if not exists
+                    $plan = [
+                        'typebp' => 'Unlimited',
+                        'name_plan' => 'default'
+                    ];
+                    $customer = [
+                        'username' => $trialUser,
+                        'password' => $trialPass,
+                        'email' => $phone . '@trial.local',
+                        'fullname' => 'Trial User - ' . $phone
+                    ];
+                    
+                    Mikrotik::addHotspotUser($client, $plan, $customer);
+                }
+            }
+        } catch (Exception $e) {
+            // Log error but don't fail - user can still login
+            error_log('MikroTik user creation error: ' . $e->getMessage());
+        }
+        
         // Generate unique session ID
         $sessionId = bin2hex(random_bytes(16));
         

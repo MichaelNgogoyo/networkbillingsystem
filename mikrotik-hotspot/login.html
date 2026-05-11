@@ -688,13 +688,36 @@
                         if (result.type === "trial" || result.type === "existing") {
                             payBtn.textContent = "Logging you in...";
                             
-                            // Set cookie to track user
+                            // Set cookies to track user
                             document.cookie = `hotspot_user=${result.username}; path=/; max-age=${86400}`;
+                            document.cookie = `hotspot_session=${result.session_id}; path=/; max-age=${86400}`;
                             
-                            // Redirect to dashboard after short delay
-                            setTimeout(() => {
-                                window.location.href = '/hotspot/dashboard.html?status=connected&duration=' + result.duration;
-                            }, 500);
+                            // Auto-login to MikroTik with the credentials
+                            const mtForm = document.createElement('form');
+                            mtForm.method = 'post';
+                            mtForm.action = '$(link-login-only)';
+                            mtForm.style.display = 'none';
+                            
+                            const userInput = document.createElement('input');
+                            userInput.type = 'hidden';
+                            userInput.name = 'username';
+                            userInput.value = result.username;
+                            
+                            const passInput = document.createElement('input');
+                            passInput.type = 'hidden';
+                            passInput.name = 'password';
+                            passInput.value = result.password;
+                            
+                            const dstInput = document.createElement('input');
+                            dstInput.type = 'hidden';
+                            dstInput.name = 'dst';
+                            dstInput.value = '$(link-orig)';
+                            
+                            mtForm.appendChild(userInput);
+                            mtForm.appendChild(passInput);
+                            mtForm.appendChild(dstInput);
+                            document.body.appendChild(mtForm);
+                            mtForm.submit();
                         } else {
                             // It's a payment prompt
                             payBtn.textContent = "Check your phone!";
