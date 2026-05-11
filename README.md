@@ -69,15 +69,11 @@ Support [Freeradius with Database](https://github.com/hotspotbilling/phpnuxbill/
 
 This Software is Free and Open Source, Without any Warranty.
 
-Even if the software is free, but Technical Support is not,
-Technical Support Start from Rp 500.000 or $50
+For technical support, please contact us at:
+- **WhatsApp**: [https://wa.link/0sib65](https://wa.link/0sib65)
+- **Email**: howtodoitech@gmail.com
 
-If you chat me for any technical support,
-you need to pay,
-
-ask anything for free in the [discussion](/hotspotbilling/phpnuxbill/discussions) page or [Telegram Group](https://t.me/phpnuxbill)
-
-Contact me at [Telegram](https://t.me/ibnux)
+You can also ask anything for free in the [discussion](/discussions) page
 
 ## License
 
@@ -86,15 +82,14 @@ GNU General Public License version 2 or later
 see [LICENSE](LICENSE) file
 
 
-## Donate to ibnux
+## Support & Sponsorship
 
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/ibnux)
+If you would like to sponsor or donate to support the development of PHPNuxBill, please contact us:
 
-BCA: 5410454825
+- **Email**: info@apperstar.dev
+- **WhatsApp**: [https://wa.link/0sib65](https://wa.link/0sib65)
 
-Mandiri: 163-000-1855-793
-
-a.n Ibnu Maksum
+**Maintained by**: Michael Ngogoyo
 
 ## SPONSORS
 
@@ -105,6 +100,4 @@ a.n Ibnu Maksum
 ## Thanks
 We appreciate all people who are participating in this project.
 
-<a href="https://github.com/hotspotbilling/phpnuxbill/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=hotspotbilling/phpnuxbill" />
-</a>
+
