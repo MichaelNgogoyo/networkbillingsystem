@@ -84,10 +84,7 @@
             background: linear-gradient(135deg, var(--brand), var(--brand-2));
         }
 
-        h1,
-        h2,
-        h3,
-        p {
+        h1, h2, h3, p {
             margin: 0;
         }
 
@@ -301,6 +298,7 @@
             color: var(--muted);
             font-size: 0.88rem;
             line-height: 1.5;
+            margin: 0;
         }
 
         .meter {
@@ -361,11 +359,9 @@
             .wrap {
                 grid-template-columns: 1fr;
             }
-
             .plans {
                 grid-template-columns: 1fr;
             }
-
             .usage-row {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
@@ -375,17 +371,12 @@
             body {
                 padding: 10px;
             }
-
-            .left,
-            .right {
+            .left, .right {
                 padding: 14px;
             }
-
-            .btn-row,
-            .tabs {
+            .btn-row, .tabs {
                 grid-template-columns: 1fr;
             }
-
             .mobile-cta {
                 display: block;
                 position: sticky;
@@ -397,7 +388,6 @@
                 padding: 10px;
                 backdrop-filter: blur(8px);
             }
-
             .mobile-cta .btn {
                 width: 100%;
             }
@@ -411,7 +401,7 @@
                 <div class="logo">HS</div>
                 <div>
                     <h1>Connect to Hostel WiFi</h1>
-                    <p class="sub">Pick your usage style, choose a package, then continue to signup or login.</p>
+                    <p class="sub">Pick your usage style, choose a package, then login to connect.</p>
                 </div>
             </div>
 
@@ -435,7 +425,6 @@
                     </div>
                     <span class="price free">Free</span>
                 </button>
-
                 <button class="plan" type="button" data-plan="1 Hour Package" data-system="1H" data-price="10" data-duration="1 hour" data-usage="quick" data-note="Fast, low cost option">
                     <div>
                         <div class="plan-title">1 Hour Package</div>
@@ -443,7 +432,6 @@
                     </div>
                     <span class="price">10 shs</span>
                 </button>
-
                 <button class="plan" type="button" data-plan="4 Hours Package" data-system="4H" data-price="20" data-duration="4 hours" data-usage="study" data-note="Stable for classes and assignments">
                     <div>
                         <div class="plan-title">4 Hours Package</div>
@@ -451,7 +439,6 @@
                     </div>
                     <span class="price">20 shs</span>
                 </button>
-
                 <button class="plan" type="button" data-plan="8 Hours Package" data-system="8H" data-price="30" data-duration="8 hours" data-usage="study" data-note="Workday coverage">
                     <div>
                         <div class="plan-title">8 Hours Package</div>
@@ -459,7 +446,6 @@
                     </div>
                     <span class="price">30 shs</span>
                 </button>
-
                 <button class="plan" type="button" data-plan="12 Hours Package" data-system="12H" data-price="40" data-duration="12 hours" data-usage="social" data-note="Long session option">
                     <div>
                         <div class="plan-title">12 Hours Package</div>
@@ -467,7 +453,6 @@
                     </div>
                     <span class="price">40 shs</span>
                 </button>
-
                 <button class="plan" type="button" data-plan="Daily Package" data-system="Daily" data-price="100" data-duration="1 day" data-usage="social" data-note="All-day internet access">
                     <div>
                         <div class="plan-title">Daily Package</div>
@@ -475,7 +460,6 @@
                     </div>
                     <span class="price">100 shs</span>
                 </button>
-
                 <button class="plan" type="button" data-plan="Weekly Package" data-system="Weekly" data-price="500" data-duration="7 days" data-usage="heavy" data-note="Reliable for regular users">
                     <div>
                         <div class="plan-title">Weekly Package</div>
@@ -483,7 +467,6 @@
                     </div>
                     <span class="price">500 shs</span>
                 </button>
-
                 <button class="plan" type="button" data-plan="Monthly Package" data-system="Monthly" data-price="1500" data-duration="30 days" data-usage="heavy" data-note="Best for long stay users">
                     <div>
                         <div class="plan-title">Monthly Package</div>
@@ -496,245 +479,162 @@
 
         <aside class="card right">
             <div class="tabs">
-                <button class="tab active" type="button" data-tab="signup">New User</button>
-                <button class="tab" type="button" data-tab="login">Existing User</button>
+                <button class="tab active" type="button" data-tab="login">Login</button>
+                <button class="tab" type="button" data-tab="info">Info</button>
             </div>
 
-            <div class="pane active" id="signupPane">
-                <form id="signupForm" method="post" action="https://network.apperstar.dev?_route=register/post&nux-mac=$(mac-esc)&nux-ip=$(ip)&nux-router=1&nux-hostname=$(identity)">
-                    <input type="hidden" name="hotspot_register" value="1">
-                    <input type="hidden" name="mpesa_callback_url" value="https://network.apperstar.dev?_route=callback/mpesa">
-                    <input type="hidden" name="selected_package" id="selected_package" value="TEST-10M">
-                    <input type="hidden" name="username" id="signup_username" value="">
-                    <input type="hidden" name="fullname" id="signup_fullname" value="Hostel Guest">
-                    <input type="hidden" name="email" id="signup_email" value="">
-                    <input type="hidden" name="address" id="signup_address" value="Hostel">
-                    <input type="hidden" name="password" id="signup_password" value="">
-                    <input type="hidden" name="cpassword" id="signup_cpassword" value="">
+            <div class="pane active" id="loginPane">
+                <form method="post" action="$(link-login-only)">
+                    <input type="hidden" name="dst" value="$(link-orig-url)">
+                    <input type="hidden" name="popup" value="true">
 
                     <div class="field">
-                        <label for="phone_number">Phone Number</label>
-                        <input type="text" id="phone_number" name="phone_number" inputmode="numeric" placeholder="07XXXXXXXX">
-                    </div>
-
-                    <div class="field">
-                        <label for="display_name">Display Name (Optional)</label>
-                        <input type="text" id="display_name" placeholder="Hostel Guest">
-                    </div>
-
-                    <div class="btn-row">
-                        <button class="btn alt" type="button" id="toLogin">I already have account</button>
-                        <button class="btn main" type="submit">Continue to access</button>
-                    </div>
-                </form>
-            </div>
-
-            <div class="pane" id="loginPane">
-                <form method="post" action="https://network.apperstar.dev?_route=login/post&nux-mac=$(mac-esc)&nux-ip=$(ip)&nux-router=1&nux-hostname=$(identity)">
-                    <input type="hidden" name="hotspot_login" value="1">
-
-                    <div class="field">
-                        <label for="login_username">Username or Phone Number</label>
-                        <input type="text" id="login_username" name="username" placeholder="Enter username or phone">
+                        <label for="login_username">Username</label>
+                        <input type="text" id="login_username" name="username" placeholder="Enter your username" required autofocus>
                     </div>
 
                     <div class="field">
                         <label for="login_password">Password</label>
-                        <input type="password" id="login_password" name="password" placeholder="Enter password">
+                        <input type="password" id="login_password" name="password" placeholder="Enter your password" required>
                     </div>
 
                     <div class="btn-row">
-                        <button class="btn alt" type="button" id="toSignup">Create account</button>
-                        <button class="btn main" type="submit">Sign in and connect</button>
+                        <button type="button" class="btn alt" id="backToInfo">Back</button>
+                        <button type="submit" class="btn main">Sign In & Connect</button>
                     </div>
                 </form>
             </div>
 
-            <section class="status" id="statusCard">
-                <h3>Your Selected Plan</h3>
-                <p id="selectedText">Trial 10 Minutes selected (system: TEST-10M). Good for testing before purchase.</p>
-                <div class="meter"><span id="meterBar"></span></div>
-                <p id="suggestionText">Usage profile: Quick Tasks. You can change anytime before continue.</p>
-                <div class="hint ok" id="hintBox">This account will be limited to one active device at a time.</div>
-            </section>
+            <div class="pane" id="infoPane">
+                <section class="status">
+                    <h3>Your Selected Plan</h3>
+                    <p id="selectedText">Trial 10 Minutes selected (system: TEST-10M). Good for testing before purchase.</p>
+                    <div class="meter"><span id="meterBar"></span></div>
+                    <p id="suggestionText">Usage profile: Quick Tasks. You can change anytime before continue.</p>
+                    <div class="hint ok" id="hintBox">This account will be limited to one active device at a time.</div>
+                </section>
 
-            <div class="helper">
-                <a href="https://network.apperstar.dev?_route=login&nux-mac=$(mac-esc)&nux-ip=$(ip)&nux-router=1&nux-hostname=$(identity)">Open full login page</a>
-                <a href="https://network.apperstar.dev?_route=register&nux-mac=$(mac-esc)&nux-ip=$(ip)&nux-router=1&nux-hostname=$(identity)">Open full registration page</a>
-                <a href="https://network.apperstar.dev?_route=callback/mpesa" target="_blank" rel="noopener">Test M-Pesa callback URL</a>
+                <section class="status" style="margin-top: 12px;">
+                    <h3>Network Info</h3>
+                    <p>Your IP: $(ip)</p>
+                    <p>MAC Address: $(mac)</p>
+                    <p>Router: $(identity)</p>
+                </section>
+
+                <div class="helper">
+                    <a href="mailto:info@apperstar.dev">Support: info@apperstar.dev</a>
+                </div>
+
+                <div class="btn-row">
+                    <button type="button" class="btn alt" style="visibility: hidden;"></button>
+                    <button type="button" class="btn main" id="goToLogin">Continue to Login</button>
+                </div>
             </div>
 
             <div class="mobile-cta">
-                <button class="btn main" type="button" id="mobileContinue">Continue with selected plan</button>
+                <button class="btn main" type="button" id="mobileContinue">Continue to Login</button>
             </div>
         </aside>
     </div>
 
     <script>
-        (function () {
-            const usageButtons = document.querySelectorAll('.usage-btn');
-            const planButtons = document.querySelectorAll('.plan');
-            const tabs = document.querySelectorAll('.tab');
-            const signupPane = document.getElementById('signupPane');
-            const loginPane = document.getElementById('loginPane');
+        (function() {
+            const usageButtons = document.querySelectorAll(".usage-btn");
+            const planButtons = document.querySelectorAll(".plan");
+            const tabs = document.querySelectorAll(".tab");
+            const loginPane = document.getElementById("loginPane");
+            const infoPane = document.getElementById("infoPane");
 
-            const selectedInput = document.getElementById('selected_package');
-            const selectedText = document.getElementById('selectedText');
-            const suggestionText = document.getElementById('suggestionText');
-            const meterBar = document.getElementById('meterBar');
-            const hintBox = document.getElementById('hintBox');
+            const selectedText = document.getElementById("selectedText");
+            const suggestionText = document.getElementById("suggestionText");
+            const meterBar = document.getElementById("meterBar");
+            const hintBox = document.getElementById("hintBox");
 
-            const signupForm = document.getElementById('signupForm');
-            const phoneInput = document.getElementById('phone_number');
-            const displayNameInput = document.getElementById('display_name');
-            const signupUsername = document.getElementById('signup_username');
-            const signupFullname = document.getElementById('signup_fullname');
-            const signupEmail = document.getElementById('signup_email');
-            const signupAddress = document.getElementById('signup_address');
-            const signupPassword = document.getElementById('signup_password');
-            const signupCpassword = document.getElementById('signup_cpassword');
-
-            const toLogin = document.getElementById('toLogin');
-            const toSignup = document.getElementById('toSignup');
-            const mobileContinue = document.getElementById('mobileContinue');
+            const backToInfo = document.getElementById("backToInfo");
+            const goToLogin = document.getElementById("goToLogin");
+            const mobileContinue = document.getElementById("mobileContinue");
 
             const usageMap = {
-                quick: {
-                    label: 'Quick Tasks',
-                    meter: '20%',
-                    recommendation: 'Trial 10 Minutes and 1 Hour Package are best for quick sessions.'
-                },
-                study: {
-                    label: 'Study and Work',
-                    meter: '45%',
-                    recommendation: '4 Hours Package or 8 Hours Package gives stable work coverage.'
-                },
-                social: {
-                    label: 'Social and Video',
-                    meter: '65%',
-                    recommendation: '12 Hours Package or Daily Package fits heavier daytime use.'
-                },
-                heavy: {
-                    label: 'Heavy Streaming',
-                    meter: '88%',
-                    recommendation: 'Weekly Package or Monthly Package is the best value.'
-                }
+                quick: { label: "Quick Tasks", meter: "20%", recommendation: "Trial 10 Minutes and 1 Hour Package are best for quick sessions." },
+                study: { label: "Study and Work", meter: "45%", recommendation: "4 Hours Package or 8 Hours Package gives stable work coverage." },
+                social: { label: "Social and Video", meter: "65%", recommendation: "12 Hours Package or Daily Package fits heavier daytime use." },
+                heavy: { label: "Heavy Streaming", meter: "88%", recommendation: "Weekly Package or Monthly Package is the best value." }
             };
 
-            let activeUsage = 'quick';
-
-            function digitsOnly(value) {
-                return String(value || '').replace(/[^0-9]/g, '');
-            }
-
-            function sanitizedEmail(value) {
-                const clean = String(value || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                return (clean || 'guest') + '@hostel.local';
-            }
+            let activeUsage = "quick";
 
             function activateTab(tabName) {
-                tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.tab === tabName));
-                signupPane.classList.toggle('active', tabName === 'signup');
-                loginPane.classList.toggle('active', tabName === 'login');
+                tabs.forEach(tab => tab.classList.toggle("active", tab.dataset.tab === tabName));
+                loginPane.classList.toggle("active", tabName === "login");
+                infoPane.classList.toggle("active", tabName === "info");
             }
 
             function pickUsage(usageType) {
                 activeUsage = usageType;
-                usageButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.usage === usageType));
-
+                usageButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.usage === usageType));
                 planButtons.forEach(plan => {
-                    plan.classList.remove('recommended');
+                    plan.classList.remove("recommended");
                     if (plan.dataset.usage === usageType) {
-                        plan.classList.add('recommended');
+                        plan.classList.add("recommended");
                     }
                 });
-
                 const info = usageMap[usageType];
                 meterBar.style.width = info.meter;
-                suggestionText.textContent = 'Usage profile: ' + info.label + '. ' + info.recommendation;
+                suggestionText.textContent = "Usage profile: " + info.label + ". " + info.recommendation;
             }
 
             function selectPlan(planButton) {
-                planButtons.forEach(plan => plan.classList.remove('active'));
-                planButton.classList.add('active');
-
+                planButtons.forEach(plan => plan.classList.remove("active"));
+                planButton.classList.add("active");
                 const planName = planButton.dataset.plan;
                 const systemName = planButton.dataset.system;
                 const price = planButton.dataset.price;
                 const duration = planButton.dataset.duration;
                 const note = planButton.dataset.note;
-
-                // Send only system identifier to backend for strict Mikrotik/PHPNuxBill matching.
-                selectedInput.value = systemName;
-                selectedText.textContent = planName + ' selected (system: ' + systemName + '). Duration: ' + duration + '. Price: ' + (price === '0' ? 'Free' : price + ' shs') + '.';
-
-                if (price === '0') {
-                    hintBox.className = 'hint warn';
-                    hintBox.textContent = 'Trial is temporary. After expiry, reconnect and buy a paid package.';
+                selectedText.textContent = planName + " selected (system: " + systemName + "). Duration: " + duration + ". Price: " + (price === "0" ? "Free" : price + " shs") + ".";
+                if (price === "0") {
+                    hintBox.className = "hint warn";
+                    hintBox.textContent = "Trial is temporary. After expiry, reconnect and buy a paid package.";
                 } else {
-                    hintBox.className = 'hint ok';
-                    hintBox.textContent = note + '. This account is limited to one active device.';
+                    hintBox.className = "hint ok";
+                    hintBox.textContent = note + ". This account is limited to one active device.";
                 }
-            }
-
-            function fillSignupDefaults() {
-                const phone = digitsOnly(phoneInput.value);
-                const displayName = displayNameInput.value.trim() || 'Hostel Guest';
-
-                if (!phone) {
-                    alert('Please enter your phone number.');
-                    phoneInput.focus();
-                    return false;
-                }
-
-                signupUsername.value = phone;
-                signupFullname.value = displayName;
-                signupEmail.value = sanitizedEmail(phone);
-                signupAddress.value = 'Hostel';
-                signupPassword.value = phone;
-                signupCpassword.value = phone;
-                return true;
             }
 
             usageButtons.forEach(button => {
-                button.addEventListener('click', function () {
+                button.addEventListener("click", function() {
                     pickUsage(this.dataset.usage);
                 });
             });
 
             planButtons.forEach(plan => {
-                plan.addEventListener('click', function () {
+                plan.addEventListener("click", function() {
                     selectPlan(this);
-                    activateTab('signup');
+                    activateTab("info");
                 });
             });
 
             tabs.forEach(tab => {
-                tab.addEventListener('click', function () {
+                tab.addEventListener("click", function() {
                     activateTab(this.dataset.tab);
                 });
             });
 
-            toLogin.addEventListener('click', function () {
-                activateTab('login');
+            backToInfo.addEventListener("click", function() {
+                activateTab("info");
             });
 
-            toSignup.addEventListener('click', function () {
-                activateTab('signup');
+            goToLogin.addEventListener("click", function() {
+                activateTab("login");
+                document.getElementById("login_username").focus();
             });
 
-            mobileContinue.addEventListener('click', function () {
-                activateTab('signup');
-                phoneInput.focus();
+            mobileContinue.addEventListener("click", function() {
+                activateTab("login");
+                document.getElementById("login_username").focus();
             });
 
-            signupForm.addEventListener('submit', function (event) {
-                if (!fillSignupDefaults()) {
-                    event.preventDefault();
-                }
-            });
-
-            pickUsage('quick');
+            pickUsage("quick");
             selectPlan(planButtons[0]);
         })();
     </script>
