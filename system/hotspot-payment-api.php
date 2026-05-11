@@ -188,7 +188,7 @@ function initiateM_PesaPayment($phone, $amount, $plan, $duration, $mac, $ip, $ro
             'PartyA' => $phone,
             'PartyB' => $daraja['shortcode'],
             'PhoneNumber' => $phone,
-            'CallBackURL' => 'https://network.apperstar.dev/api/daraja-callback.php',
+            'CallBackURL' => 'https://network.apperstar.dev/system/daraja-callback.php',
             'AccountReference' => $reference,
             'TransactionDesc' => 'WiFi: ' . $plan . ' (' . $duration . ')'
         ];
