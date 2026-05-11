@@ -688,33 +688,18 @@
                         if (result.type === "trial" || result.type === "existing") {
                             payBtn.textContent = "Logging you in...";
                             
-                            const mtForm = document.createElement("form");
-                            mtForm.method = "post";
-                            mtForm.action = "$(link-login-only)";
+                            // Set cookie to track user
+                            document.cookie = `hotspot_user=${result.username}; path=/; max-age=${86400}`;
                             
-                            const userInput = document.createElement("input");
-                            userInput.type = "hidden";
-                            userInput.name = "username";
-                            userInput.value = result.username || phone;
-                            
-                            const passInput = document.createElement("input");
-                            passInput.type = "hidden";
-                            passInput.name = "password";
-                            passInput.value = result.password || phone;
-                            
-                            const dstInput = document.createElement("input");
-                            dstInput.type = "hidden";
-                            dstInput.name = "dst";
-                            dstInput.value = "$(link-orig)";
-                            
-                            mtForm.appendChild(userInput);
-                            mtForm.appendChild(passInput);
-                            mtForm.appendChild(dstInput);
-                            document.body.appendChild(mtForm);
-                            mtForm.submit();
+                            // Redirect to dashboard after short delay
+                            setTimeout(() => {
+                                window.location.href = '/hotspot/dashboard.html?status=connected&duration=' + result.duration;
+                            }, 500);
                         } else {
+                            // It's a payment prompt
                             payBtn.textContent = "Check your phone!";
-                            alert("M-Pesa STK Push sent! Please enter your M-Pesa PIN on your phone to complete payment. Once you receive the SMS confirmation from Safaricom, log in with your phone number.");
+                            alert("M-Pesa STK Push sent! Please enter your M-Pesa PIN on your phone to complete payment. Once you receive the SMS confirmation from Safaricom, refresh this page or visit the dashboard.");
+                            activateTab("login");
                         }
                     } else {
                         alert("Error: " + (result.message || "Unknown error"));
