@@ -17,6 +17,11 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+// Enable error logging
+error_reporting(E_ALL);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/../logs/hotspot-payment-api.log');
+
 // Load PHPNuxBill configuration
 require_once(__DIR__ . '/../init.php');
 require_once(__DIR__ . '/paymentgateway/mpesa.php');
@@ -41,6 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode($response);
     exit;
 }
+
+// Log request details for debugging
+error_log('Hotspot Payment API called from: ' . $_SERVER['REMOTE_ADDR'] . ' | POST params: ' . json_encode($_POST));
 
 try {
     // Get request data
