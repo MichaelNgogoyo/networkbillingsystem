@@ -128,41 +128,64 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
         $expiryTime = time() + $durationSeconds;
         
         // Create MikroTik hotspot user AND log them in
+        $loginSuccess = false;
         try {
+            // Try to get router config from database, fallback to hardcoded
             $router = ORM::for_table('tbl_routers')->where('ip', '192.168.88.1')->find_one();
+            
+            $routerIp = '192.168.88.1';
+            $routerPort = 8728;
+            $routerUser = 'admin';
+            $routerPass = '1234';
+            
             if ($router) {
-                error_log('Connecting to MikroTik: ' . $router['ip_port']);
-                $client = Mikrotik::getClient($router['ip_port'] ?? '192.168.88.1:8728', $router['username'] ?? 'admin', $router['password'] ?? '1234');
-                if ($client) {
-                    // Create a simple trial profile if not exists
-                    $plan = [
-                        'typebp' => 'Unlimited',
-                        'name_plan' => 'default'
-                    ];
-                    $customer = [
-                        'username' => $trialUser,
-                        'password' => $trialPass,
-                        'email' => $phone . '@trial.local',
-                        'fullname' => 'Trial User - ' . $phone
-                    ];
-                    
-                    error_log('Creating MikroTik user: ' . $trialUser);
-                    Mikrotik::addHotspotUser($client, $plan, $customer);
-                    error_log('MikroTik user created successfully: ' . $trialUser);
-                    
-                    // Now login the user from the server side
-                    error_log('Logging in MikroTik user: ' . $trialUser . ' from IP: ' . $ip . ' MAC: ' . $mac);
-                    Mikrotik::logMeIn($client, $trialUser, $trialPass, $ip, $mac);
-                    error_log('MikroTik user logged in successfully: ' . $trialUser);
-                } else {
-                    error_log('Failed to connect to MikroTik client');
-                }
+                // Parse ip_port if it contains port
+                $ipPort = $router['ip_port'] ?? '192.168.88.1:8728';
+                $parts = explode(':', $ipPort);
+                $routerIp = $parts[0];
+                $routerPort = isset($parts[1]) ? $parts[1] : 8728;
+                $routerUser = $router['username'] ?? 'admin';
+                $routerPass = $router['password'] ?? '1234';
+                error_log('Using router from DB: ' . $routerIp . ':' . $routerPort);
             } else {
-                error_log('Router configuration not found for IP 192.168.88.1');
+                error_log('Router not in DB, using hardcoded: 192.168.88.1:8728');
+            }
+            
+            error_log('Connecting to MikroTik at ' . $routerIp . ':' . $routerPort);
+            $client = Mikrotik::getClient($routerIp . ':' . $routerPort, $routerUser, $routerPass);
+            
+            if ($client) {
+                // Create a simple trial profile if not exists
+                $plan = [
+                    'typebp' => 'Unlimited',
+                    'name_plan' => 'default'
+                ];
+                $customer = [
+                    'username' => $trialUser,
+                    'password' => $trialPass,
+                    'email' => $phone . '@trial.local',
+                    'fullname' => 'Trial User - ' . $phone
+                ];
+                
+                error_log('Creating MikroTik user: ' . $trialUser);
+                Mikrotik::addHotspotUser($client, $plan, $customer);
+                error_log('MikroTik user created successfully: ' . $trialUser);
+                
+                // Now login the user from the server side
+                error_log('Logging in MikroTik user: ' . $trialUser . ' from IP: ' . $ip . ' MAC: ' . $mac);
+                Mikrotik::logMeIn($client, $trialUser, $trialPass, $ip, $mac);
+                error_log('MikroTik user logged in successfully: ' . $trialUser);
+                $loginSuccess = true;
+            } else {
+                error_log('Failed to create MikroTik client for ' . $routerIp . ':' . $routerPort);
             }
         } catch (Exception $e) {
-            // Log error but don't fail - user can still login
-            error_log('MikroTik user creation error: ' . $e->getMessage());
+            // Log error but continue - session will be created anyway
+            error_log('MikroTik user creation error: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
+        }
+        
+        if (!$loginSuccess) {
+            error_log('WARNING: MikroTik user login may have failed for ' . $trialUser);
         }
         
         // Generate unique session ID
