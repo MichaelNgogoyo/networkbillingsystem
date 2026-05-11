@@ -19,7 +19,8 @@ $response = [
 
 // Check if user has active hotspot session cookie/session
 $username = isset($_COOKIE['hotspot_user']) ? sanitize($_COOKIE['hotspot_user']) : null;
-$sessionId = isset($_SESSION['hotspot_session']) ? $_SESSION['hotspot_session'] : null;
+// Try to get session_id from either SESSION or COOKIE
+$sessionId = isset($_SESSION['hotspot_session']) ? $_SESSION['hotspot_session'] : (isset($_COOKIE['hotspot_session']) ? sanitize($_COOKIE['hotspot_session']) : null);
 
 // Verify session is valid
 if (!$username || !$sessionId) {
@@ -37,12 +38,20 @@ switch($action) {
             ->where('session_id', $sessionId)
             ->find_one();
         
+        if (!$session) {
+            // Try looking up without session_id if it's not found (fallback)
+            $session = ORM::for_table('hotspot_guest_sessions')
+                ->where('username', $username)
+                ->order_by_desc('created_at')
+                ->find_one();
+        }
+        
         if ($session && strtotime($session['expires_at']) > time()) {
             $response = [
                 'status' => 'success',
                 'is_logged_in' => true,
                 'username' => $username,
-                'type' => $session['access_type'],
+                'type' => isset($session['access_type']) ? $session['access_type'] : 'trial',
                 'expires_at' => $session['expires_at'],
                 'remaining_seconds' => max(0, strtotime($session['expires_at']) - time()),
                 'created_at' => $session['created_at']

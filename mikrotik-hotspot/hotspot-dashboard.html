@@ -366,8 +366,10 @@
         }
         
         function startCountdown() {
-            // Get remaining time from localStorage or estimate
-            let remaining = 10 * 60; // 10 minutes default for trial
+            // Get remaining time from sessionStorage or estimates
+            const stored = sessionStorage.getItem('hotspot_session');
+            const userData = stored ? JSON.parse(stored) : null;
+            let remaining = userData?.remaining_seconds || (10 * 60); // 10 minutes default for trial
             
             const interval = setInterval(() => {
                 const hours = Math.floor(remaining / 3600);
@@ -409,6 +411,8 @@
                 
                 if (data.status === 'success') {
                     document.cookie = `hotspot_user=${data.user.phone}; path=/`;
+                    document.cookie = `hotspot_session=${data.session_id}; path=/`;
+                    sessionStorage.setItem('hotspot_session', JSON.stringify(data));
                     showAlert('Logged in successfully!', 'success');
                     setTimeout(() => showConnected(), 1000);
                 } else {
@@ -463,7 +467,33 @@
         }
         
         async function startTrial() {
-            showAlert('Trial feature coming soon! Please register to get started.', 'info');
+            const phone = prompt('Enter your phone number (254XXXXXXXXX):');
+            if (!phone) return;
+            
+            showLoading(true);
+            try {
+                const res = await fetch('/system/hotspot-payment-api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `phone=${encodeURIComponent(phone)}&package=${encodeURIComponent(JSON.stringify({plan:"Trial 10 Minutes",price:0,duration:"10 minutes",system:"unlimited",usage:"General"}))}&device_mac=${encodeURIComponent(getCookie('mikrotik_mac') || 'unknown')}&device_ip=${encodeURIComponent(getCookie('mikrotik_ip') || 'unknown')}&router=hotspot`
+                });
+                
+                const data = await res.json();
+                showLoading(false);
+                
+                if (data.status === 'success') {
+                    document.cookie = `hotspot_user=${data.username}; path=/`;
+                    document.cookie = `hotspot_session=${data.session_id}; path=/`;
+                    sessionStorage.setItem('hotspot_session', JSON.stringify(data));
+                    showAlert('Trial activated! You have ' + data.duration + ' of free WiFi', 'success');
+                    setTimeout(() => showConnected(), 1000);
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            } catch (err) {
+                showLoading(false);
+                showAlert('Error: ' + err.message, 'error');
+            }
         }
         
         function buyMore() {
@@ -476,6 +506,8 @@
         
         function logout() {
             document.cookie = 'hotspot_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC';
+            document.cookie = 'hotspot_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC';
+            sessionStorage.removeItem('hotspot_session');
             showNotConnected();
             showAlert('You have been logged out', 'info');
         }

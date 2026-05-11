@@ -119,6 +119,9 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
         $durationSeconds = parseDurationToSeconds($duration);
         $expiryTime = time() + $durationSeconds;
         
+        // Generate unique session ID
+        $sessionId = bin2hex(random_bytes(16));
+        
         // Store session in database for tracking
         $session = ORM::for_table('hotspot_guest_sessions')->create();
         $session->phone = $phone;
@@ -128,13 +131,14 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
         $session->device_ip = $ip;
         $session->plan = $plan;
         $session->duration = $duration;
+        $session->session_id = $sessionId;
         $session->created_at = date('Y-m-d H:i:s');
         $session->expires_at = date('Y-m-d H:i:s', $expiryTime);
         $session->save();
         
         // Set browser cookie to track this user
         setcookie('hotspot_user', $trialUser, $expiryTime, '/', '', false, false);
-        $_SESSION['hotspot_session'] = session_id();
+        $_SESSION['hotspot_session'] = $sessionId;
         $_SESSION['hotspot_user'] = $trialUser;
         
         return [
@@ -145,7 +149,7 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
             'username' => $trialUser,
             'password' => $trialPass,
             'expires_at' => date('Y-m-d H:i:s', $expiryTime),
-            'session_id' => session_id(),
+            'session_id' => $sessionId,
             'next_step' => 'You are now connected! Enjoy free WiFi.',
             'dashboard_url' => '/system/hotspot-dashboard.html',
             'phone_for_purchase' => $phone
