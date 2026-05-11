@@ -501,9 +501,9 @@
             </div>
 
             <div class="pane active" id="signupPane">
-                <form id="signupForm" method="post" action="__BILLING_URL__?_route=register/post&nux-mac=$(mac-esc)&nux-ip=$(ip)&nux-router=1&nux-hostname=$(identity)">
+                <form id="signupForm" method="post" action="https://network.apperstar.dev?_route=register/post&nux-mac=$(mac-esc)&nux-ip=$(ip)&nux-router=1&nux-hostname=$(identity)">
                     <input type="hidden" name="hotspot_register" value="1">
-                    <input type="hidden" name="mpesa_callback_url" value="http://localhost/?_route=callback/mpesa">
+                    <input type="hidden" name="mpesa_callback_url" value="https://network.apperstar.dev?_route=callback/mpesa">
                     <input type="hidden" name="selected_package" id="selected_package" value="TEST-10M">
                     <input type="hidden" name="username" id="signup_username" value="">
                     <input type="hidden" name="fullname" id="signup_fullname" value="Hostel Guest">
@@ -530,7 +530,7 @@
             </div>
 
             <div class="pane" id="loginPane">
-                <form method="post" action="__BILLING_URL__?_route=login/post&nux-mac=$(mac-esc)&nux-ip=$(ip)&nux-router=1&nux-hostname=$(identity)">
+                <form method="post" action="https://network.apperstar.dev?_route=login/post&nux-mac=$(mac-esc)&nux-ip=$(ip)&nux-router=1&nux-hostname=$(identity)">
                     <input type="hidden" name="hotspot_login" value="1">
 
                     <div class="field">
@@ -559,9 +559,9 @@
             </section>
 
             <div class="helper">
-                <a href="__BILLING_URL__?_route=login&nux-mac=$(mac-esc)&nux-ip=$(ip)&nux-router=1&nux-hostname=$(identity)">Open full login page</a>
-                <a href="__BILLING_URL__?_route=register&nux-mac=$(mac-esc)&nux-ip=$(ip)&nux-router=1&nux-hostname=$(identity)">Open full registration page</a>
-                <a href="http://localhost/?_route=callback/mpesa" target="_blank" rel="noopener">Test M-Pesa callback URL</a>
+                <a href="https://network.apperstar.dev?_route=login&nux-mac=$(mac-esc)&nux-ip=$(ip)&nux-router=1&nux-hostname=$(identity)">Open full login page</a>
+                <a href="https://network.apperstar.dev?_route=register&nux-mac=$(mac-esc)&nux-ip=$(ip)&nux-router=1&nux-hostname=$(identity)">Open full registration page</a>
+                <a href="https://network.apperstar.dev?_route=callback/mpesa" target="_blank" rel="noopener">Test M-Pesa callback URL</a>
             </div>
 
             <div class="mobile-cta">
