@@ -484,25 +484,31 @@
             </div>
 
             <div class="pane active" id="loginPane">
-                <form method="post" action="$(link-login-only)">
-                    <input type="hidden" name="dst" value="$(link-orig-url)">
-                    <input type="hidden" name="popup" value="true">
+                <form method="post" action="https://network.apperstar.dev/api/hotspot-payment.php" id="paymentForm">
+                    <input type="hidden" name="package" id="selectedPackage" value="">
+                    <input type="hidden" name="device_mac" value="$(mac-esc)">
+                    <input type="hidden" name="device_ip" value="$(ip)">
+                    <input type="hidden" name="router" value="$(identity)">
+                    <input type="hidden" name="redirect_url" value="$(link-orig-url)">
 
                     <div class="field">
-                        <label for="login_username">Username</label>
-                        <input type="text" id="login_username" name="username" placeholder="Enter your username" required autofocus>
+                        <label for="phone">Phone Number (for M-Pesa)</label>
+                        <input type="tel" id="phone" name="phone" placeholder="254712345678" pattern="^254[0-9]{9}$" required autofocus>
                     </div>
 
                     <div class="field">
-                        <label for="login_password">Password</label>
-                        <input type="password" id="login_password" name="password" placeholder="Enter your password" required>
+                        <label id="packageLabel">Selected Package: <strong id="packageDisplay">Trial 10 Minutes</strong></label>
                     </div>
 
                     <div class="btn-row">
                         <button type="button" class="btn alt" id="backToInfo">Back</button>
-                        <button type="submit" class="btn main">Sign In & Connect</button>
+                        <button type="submit" class="btn main" id="payBtn">Pay & Connect</button>
                     </div>
                 </form>
+
+                <div style="margin-top: 15px; padding: 10px; background: rgba(93, 226, 204, 0.1); border-left: 3px solid #5de2cc; border-radius: 4px;">
+                    <p style="font-size: 0.85rem; color: var(--muted); margin: 0;">💡 <strong>Trial:</strong> 10 minutes free. After expiry, use your phone number to purchase a package.</p>
+                </div>
             </div>
 
             <div class="pane" id="infoPane">
@@ -553,6 +559,9 @@
             const backToInfo = document.getElementById("backToInfo");
             const goToLogin = document.getElementById("goToLogin");
             const mobileContinue = document.getElementById("mobileContinue");
+            const paymentForm = document.getElementById("paymentForm");
+            const selectedPackageInput = document.getElementById("selectedPackage");
+            const packageDisplay = document.getElementById("packageDisplay");
 
             const usageMap = {
                 quick: { label: "Quick Tasks", meter: "20%", recommendation: "Trial 10 Minutes and 1 Hour Package are best for quick sessions." },
@@ -562,11 +571,18 @@
             };
 
             let activeUsage = "quick";
+            let selectedPlanData = null;
 
             function activateTab(tabName) {
                 tabs.forEach(tab => tab.classList.toggle("active", tab.dataset.tab === tabName));
                 loginPane.classList.toggle("active", tabName === "login");
                 infoPane.classList.toggle("active", tabName === "info");
+                
+                // Update form field when switching to login tab
+                if (tabName === "login" && selectedPlanData) {
+                    selectedPackageInput.value = JSON.stringify(selectedPlanData);
+                    packageDisplay.textContent = selectedPlanData.plan;
+                }
             }
 
             function pickUsage(usageType) {
@@ -586,19 +602,31 @@
             function selectPlan(planButton) {
                 planButtons.forEach(plan => plan.classList.remove("active"));
                 planButton.classList.add("active");
-                const planName = planButton.dataset.plan;
-                const systemName = planButton.dataset.system;
-                const price = planButton.dataset.price;
-                const duration = planButton.dataset.duration;
-                const note = planButton.dataset.note;
-                selectedText.textContent = planName + " selected (system: " + systemName + "). Duration: " + duration + ". Price: " + (price === "0" ? "Free" : price + " shs") + ".";
+                
+                selectedPlanData = {
+                    plan: planButton.dataset.plan,
+                    system: planButton.dataset.system,
+                    price: planButton.dataset.price,
+                    duration: planButton.dataset.duration,
+                    note: planButton.dataset.note
+                };
+                
+                const planName = selectedPlanData.plan;
+                const price = selectedPlanData.price;
+                const duration = selectedPlanData.duration;
+                const note = selectedPlanData.note;
+                
+                selectedText.textContent = planName + " selected. Duration: " + duration + ". Price: " + (price === "0" ? "Free" : price + " shs") + ".";
                 if (price === "0") {
                     hintBox.className = "hint warn";
                     hintBox.textContent = "Trial is temporary. After expiry, reconnect and buy a paid package.";
                 } else {
                     hintBox.className = "hint ok";
-                    hintBox.textContent = note + ". This account is limited to one active device.";
+                    hintBox.textContent = note + ". One device at a time.";
                 }
+                
+                packageDisplay.textContent = planName;
+                activateTab("info");
             }
 
             usageButtons.forEach(button => {
@@ -610,7 +638,6 @@
             planButtons.forEach(plan => {
                 plan.addEventListener("click", function() {
                     selectPlan(this);
-                    activateTab("info");
                 });
             });
 
@@ -626,16 +653,32 @@
 
             goToLogin.addEventListener("click", function() {
                 activateTab("login");
-                document.getElementById("login_username").focus();
+                document.getElementById("phone").focus();
             });
 
             mobileContinue.addEventListener("click", function() {
                 activateTab("login");
-                document.getElementById("login_username").focus();
+                document.getElementById("phone").focus();
+            });
+
+            // Handle form submission for M-Pesa Daraja
+            paymentForm.addEventListener("submit", function(e) {
+                e.preventDefault();
+                const phone = document.getElementById("phone").value;
+                if (!phone || !selectedPlanData) {
+                    alert("Please enter phone number and select a package");
+                    return;
+                }
+                // Form will POST to M-Pesa API endpoint
+                this.submit();
             });
 
             pickUsage("quick");
             selectPlan(planButtons[0]);
+        })();
+    </script>
+</body>
+</html>
         })();
     </script>
 </body>
