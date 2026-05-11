@@ -106,8 +106,12 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
         // Clean phone number
         $phone = preg_replace('/[^0-9]/', '', $phone);
         
+        // Decode URL-encoded MAC address from MikroTik's $(mac-esc)
+        $mac = urldecode($mac);
+        // Remove colons to get clean MAC for short ID
+        $macClean = strtolower(str_replace(':', '', $mac));
         // Generate trial username: trial_[MAC_LAST_6]_[TIMESTAMP]
-        $macShort = strtolower(substr(str_replace(':', '', $mac), -6));
+        $macShort = substr($macClean, -6);
         $trialUser = 'trial_' . $macShort . '_' . time();
         $trialPass = generateSecurePassword(8);
         
@@ -163,6 +167,9 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
 function initiateM_PesaPayment($phone, $amount, $plan, $duration, $mac, $ip, $router, $system) {
     
     try {
+        // Decode URL-encoded MAC address from MikroTik's $(mac-esc)
+        $mac = urldecode($mac);
+        
         // Get Daraja credentials from config/database
         $daraja = getDarajaConfig();
         
@@ -178,7 +185,8 @@ function initiateM_PesaPayment($phone, $amount, $plan, $duration, $mac, $ip, $ro
         }
         
         // Generate payment reference
-        $reference = 'WIFI_' . time() . '_' . strtolower(substr(str_replace(':', '', $mac), -4));
+        $macClean = strtolower(str_replace(':', '', $mac));
+        $reference = 'WIFI_' . time() . '_' . substr($macClean, -4);
         $timestamp = date('YmdHis');
         $password = base64_encode($daraja['shortcode'] . $daraja['passkey'] . $timestamp);
         
