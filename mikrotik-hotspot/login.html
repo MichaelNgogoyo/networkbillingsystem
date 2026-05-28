@@ -609,9 +609,24 @@
 
                 if (result.status === 'success') {
                     showMessage(msg, '✓ ' + result.message, 'success');
+                    
+                    // Show credentials in a separate section
+                    if (result.username && result.password) {
+                        setTimeout(() => {
+                            const credSection = document.createElement('div');
+                            credSection.style.cssText = 'background:#f0f0f0; padding:15px; border-radius:8px; margin-top:10px; text-align:left; font-family:monospace; font-size:12px;';
+                            credSection.innerHTML = '<strong>Your WiFi Credentials:</strong><br>' +
+                                'Username: <code style="background:white; padding:5px; border-radius:4px;">' + escapeHtml(result.username) + '</code><br>' +
+                                'Password: <code style="background:white; padding:5px; border-radius:4px;">' + escapeHtml(result.password) + '</code><br><br>' +
+                                '<small>Use these to log in to the WiFi portal.</small>';
+                            msg.parentNode.insertBefore(credSection, msg.nextSibling);
+                        }, 200);
+                    }
+                    
+                    // Redirect to status page after delay
                     setTimeout(() => {
-                        window.location.href = '/hotspot/dashboard.html?phone=' + encodeURIComponent(currentPhone);
-                    }, 1500);
+                        window.location.href = '/status.html';
+                    }, 3000);
                 } else {
                     showMessage(msg, '❌ ' + result.message, 'error');
                     btn.disabled = false;
@@ -643,6 +658,17 @@
         function showMessage(element, text, type) {
             element.textContent = text;
             element.className = 'message ' + type;
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
     </script>
 </body>
