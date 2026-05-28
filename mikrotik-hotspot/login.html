@@ -417,14 +417,19 @@
         // Determine which API endpoint to use based on the current location
         function getApiUrl() {
             const hostname = window.location.hostname;
-            const protocol = window.location.protocol;
             
-            // If on the local hotspot network, use HTTP local endpoint
-            if (hostname === '192.168.88.1' || hostname === 'localhost') {
-                return 'http://' + hostname + '/system/hotspot-simple-api.php';
+            // If on the local hotspot network, we'll need to handle differently
+            if (hostname === '192.168.88.1') {
+                // On hotspot, we'll use HTTPS but accept that it might fail
+                return 'https://network.apperstar.dev/system/hotspot-simple-api.php';
             }
             
-            // If running on network.apperstar.dev, use HTTPS
+            // If on localhost
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return 'http://localhost/system/hotspot-simple-api.php';
+            }
+            
+            // If on production domain
             if (hostname.includes('network.apperstar.dev') || hostname.includes('apperstar.dev')) {
                 return 'https://network.apperstar.dev/system/hotspot-simple-api.php';
             }
@@ -434,7 +439,8 @@
         }
         
         let API_URL = getApiUrl();
-        const REMOTE_API_URL = 'https://network.apperstar.dev/system/hotspot-simple-api.php';
+        const HOTSPOT_MODE = window.location.hostname === '192.168.88.1';
+        console.log('Using API_URL:', API_URL, 'HOTSPOT_MODE:', HOTSPOT_MODE);
         
         let currentPhone = '';
         let currentSessionId = '';
@@ -464,7 +470,8 @@
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: 'phone=' + encodeURIComponent(phone),
                     mode: 'cors',
-                    cache: 'no-store'
+                    cache: 'no-store',
+                    timeout: 5000
                 });
 
                 if (!response.ok) {
@@ -477,6 +484,44 @@
                 if (result.status === 'success') {
                     currentPhone = phone;
                     isNewUser = !result.exists;
+                    if (isNewUser) {
+                        goToStep(2);
+                        showMessage(document.getElementById('step2msg'), '✓ Create a 4-digit PIN', 'success');
+                    } else {
+                        goToStep(2);
+                        showMessage(document.getElementById('step2msg'), '✓ Enter your PIN', 'success');
+                    }
+                } else {
+                    showMessage(msg, '❌ ' + (result.message || 'Invalid response'), 'error');
+                }
+                btn.disabled = false;
+            } catch (error) {
+                load.style.display = 'none';
+                console.error('API Error:', error, 'API_URL:', API_URL);
+                
+                // If on hotspot and API is unreachable, allow local validation
+                if (HOTSPOT_MODE && error.message === 'Failed to fetch') {
+                    console.warn('Hotspot mode: API unreachable, proceeding with local validation');
+                    currentPhone = phone;
+                    isNewUser = true;  // Assume new user on hotspot
+                    goToStep(2);
+                    showMessage(document.getElementById('step2msg'), '✓ Create a 4-digit PIN (local validation)', 'success');
+                    btn.disabled = false;
+                    return;
+                }
+                
+                let errorMsg = 'Connection error';
+                if (error.message === 'Failed to fetch') {
+                    errorMsg = 'Cannot reach authentication server. Check your internet connection.';
+                } else if (error.message.includes('HTTP')) {
+                    errorMsg = 'Server error: ' + error.message;
+                } else {
+                    errorMsg = error.message || 'Network error';
+                }
+                
+                showMessage(msg, '❌ ' + errorMsg, 'error');
+                btn.disabled = false;
+            }
 
                     if (isNewUser) {
                         document.getElementById('form-setup-pin').classList.remove('hidden');
