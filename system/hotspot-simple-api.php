@@ -1,0 +1,338 @@
+<?php
+/**
+ * Simplified Hotspot Login API
+ * Phone + 4-digit PIN authentication
+ * Integrates directly with MikroTik profiles
+ */
+
+require_once __DIR__ . '/boot.php';
+
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit(json_encode(['status' => 'ok']));
+}
+
+$action = $_GET['action'] ?? $_POST['action'] ?? null;
+
+try {
+    switch ($action) {
+        case 'check-phone':
+            checkPhone();
+            break;
+        case 'verify-pin':
+            verifyPin();
+            break;
+        case 'create-user':
+            createNewUser();
+            break;
+        case 'select-package':
+            selectPackage();
+            break;
+        default:
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
+    }
+} catch (Exception $e) {
+    error_log('[hotspot-login] Error: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Server error: ' . $e->getMessage()
+    ]);
+}
+
+function checkPhone() {
+    $phone = $_POST['phone'] ?? null;
+
+    if (!$phone) {
+        http_response_code(400);
+        return echo json_encode(['status' => 'error', 'message' => 'Phone required']);
+    }
+
+    // Validate phone format
+    if (!preg_match('/^254[0-9]{9}$/', $phone)) {
+        http_response_code(400);
+        return echo json_encode([
+            'status' => 'error',
+            'message' => 'Invalid phone format. Use 254XXXXXXXXX'
+        ]);
+    }
+
+    // Check if user exists
+    $user = ORM::for_table('hotspot_users')
+        ->where('phone', $phone)
+        ->find_one();
+
+    if ($user) {
+        // User exists - needs PIN
+        echo json_encode([
+            'status' => 'success',
+            'exists' => true,
+            'phone' => $phone,
+            'message' => 'Enter your 4-digit PIN'
+        ]);
+    } else {
+        // New user - can create account or try trial
+        echo json_encode([
+            'status' => 'success',
+            'exists' => false,
+            'phone' => $phone,
+            'message' => 'New user detected. Set up 4-digit PIN to get free trial!'
+        ]);
+    }
+}
+
+function verifyPin() {
+    $phone = $_POST['phone'] ?? null;
+    $pin = $_POST['pin'] ?? null;
+
+    if (!$phone || !$pin) {
+        http_response_code(400);
+        return echo json_encode(['status' => 'error', 'message' => 'Phone and PIN required']);
+    }
+
+    // Validate phone format
+    if (!preg_match('/^254[0-9]{9}$/', $phone)) {
+        http_response_code(400);
+        return echo json_encode(['status' => 'error', 'message' => 'Invalid phone format']);
+    }
+
+    // Validate PIN format (4 digits)
+    if (!preg_match('/^[0-9]{4}$/', $pin)) {
+        http_response_code(400);
+        return echo json_encode(['status' => 'error', 'message' => 'PIN must be 4 digits']);
+    }
+
+    // Find user
+    $user = ORM::for_table('hotspot_users')
+        ->where('phone', $phone)
+        ->find_one();
+
+    if (!$user) {
+        http_response_code(401);
+        return echo json_encode([
+            'status' => 'error',
+            'message' => 'User not found'
+        ]);
+    }
+
+    // Verify PIN
+    if (!password_verify($pin, $user->pin)) {
+        http_response_code(401);
+        return echo json_encode([
+            'status' => 'error',
+            'message' => 'Invalid PIN'
+        ]);
+    }
+
+    // Update last login
+    $user->last_login = date('Y-m-d H:i:s');
+    $user->save();
+
+    // Create session
+    $sessionId = bin2hex(random_bytes(32));
+    $session = ORM::for_table('hotspot_user_sessions')->create();
+    $session->user_id = $user->id;
+    $session->phone = $phone;
+    $session->session_id = $sessionId;
+    $session->ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
+    $session->expires_at = date('Y-m-d H:i:s', strtotime('+24 hours'));
+    $session->save();
+
+    http_response_code(200);
+    echo json_encode([
+        'status' => 'success',
+        'message' => 'PIN verified! Select a package.',
+        'user_id' => $user->id,
+        'phone' => $phone,
+        'session_id' => $sessionId,
+        'trial_used' => (bool)$user->trial_used
+    ]);
+}
+
+function createNewUser() {
+    $phone = $_POST['phone'] ?? null;
+    $pin = $_POST['pin'] ?? null;
+
+    if (!$phone || !$pin) {
+        http_response_code(400);
+        return echo json_encode(['status' => 'error', 'message' => 'Phone and PIN required']);
+    }
+
+    // Validate phone format
+    if (!preg_match('/^254[0-9]{9}$/', $phone)) {
+        http_response_code(400);
+        return echo json_encode([
+            'status' => 'error',
+            'message' => 'Invalid phone format. Use 254XXXXXXXXX'
+        ]);
+    }
+
+    // Validate PIN format (4 digits)
+    if (!preg_match('/^[0-9]{4}$/', $pin)) {
+        http_response_code(400);
+        return echo json_encode([
+            'status' => 'error',
+            'message' => 'PIN must be exactly 4 digits'
+        ]);
+    }
+
+    // Check if phone already exists
+    $existingUser = ORM::for_table('hotspot_users')
+        ->where('phone', $phone)
+        ->find_one();
+
+    if ($existingUser) {
+        http_response_code(409);
+        return echo json_encode([
+            'status' => 'error',
+            'message' => 'Phone number already registered'
+        ]);
+    }
+
+    // Create new user
+    $user = ORM::for_table('hotspot_users')->create();
+    $user->phone = $phone;
+    $user->pin = password_hash($pin, PASSWORD_BCRYPT);
+    $user->trial_used = 0;
+    $user->status = 'active';
+    $user->created_at = date('Y-m-d H:i:s');
+    $user->save();
+
+    // Create session
+    $sessionId = bin2hex(random_bytes(32));
+    $session = ORM::for_table('hotspot_user_sessions')->create();
+    $session->user_id = $user->id;
+    $session->phone = $phone;
+    $session->session_id = $sessionId;
+    $session->ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
+    $session->expires_at = date('Y-m-d H:i:s', strtotime('+24 hours'));
+    $session->save();
+
+    http_response_code(201);
+    echo json_encode([
+        'status' => 'success',
+        'message' => '✓ Account created! Get your free 10-minute trial now.',
+        'user_id' => $user->id,
+        'phone' => $phone,
+        'session_id' => $sessionId,
+        'grant_trial' => true
+    ]);
+}
+
+function selectPackage() {
+    $phone = $_POST['phone'] ?? null;
+    $packageName = $_POST['package'] ?? null;
+    $sessionId = $_POST['session_id'] ?? null;
+
+    if (!$phone || !$packageName || !$sessionId) {
+        http_response_code(400);
+        return echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
+    }
+
+    // Verify session exists
+    $session = ORM::for_table('hotspot_user_sessions')
+        ->where('session_id', $sessionId)
+        ->find_one();
+
+    if (!$session || strtotime($session->expires_at) < time()) {
+        http_response_code(401);
+        return echo json_encode(['status' => 'error', 'message' => 'Session expired']);
+    }
+
+    // Map package name to MikroTik profile
+    $profileMap = [
+        'trial' => 'TEST-10M',
+        '1h' => '1H',
+        '4h' => '4H',
+        '8h' => '8H',
+        '12h' => '12H',
+        'daily' => 'Daily',
+        'weekly' => 'Weekly',
+        'monthly' => 'Monthly'
+    ];
+
+    $packageKey = strtolower(str_replace(' ', '', $packageName));
+    if (!isset($profileMap[$packageKey])) {
+        http_response_code(400);
+        return echo json_encode(['status' => 'error', 'message' => 'Invalid package']);
+    }
+
+    $mikrotikProfile = $profileMap[$packageKey];
+    
+    // Check if this is trial
+    $isTrial = ($packageKey === 'trial');
+    $user = ORM::for_table('hotspot_users')
+        ->where('phone', $phone)
+        ->find_one();
+
+    if ($isTrial) {
+        // Check if trial already used
+        if ($user->trial_used) {
+            http_response_code(403);
+            return echo json_encode([
+                'status' => 'error',
+                'message' => 'Trial already used! Please select a paid package or upgrade.'
+            ]);
+        }
+
+        // Mark trial as used
+        $user->trial_used = 1;
+        $user->save();
+    }
+
+    // Create MikroTik username (phone-based)
+    $shortPhone = substr($phone, -9); // Last 9 digits
+    $username = strtolower($packageKey) . '_' . $shortPhone . '_' . time();
+    $password = bin2hex(random_bytes(6)); // Random 12-char password
+
+    // Create user in MikroTik via API
+    try {
+        require_once __DIR__ . '/autoload/Mikrotik.php';
+        $client = Mikrotik::getClient('192.168.88.1', 'admin', '1234');
+        
+        if ($client) {
+            // Create hotspot user with profile
+            Mikrotik::addHotspotUser($client, $mikrotikProfile, [
+                'name' => $username,
+                'password' => $password,
+                'profile' => $mikrotikProfile
+            ]);
+
+            // Server-side login
+            Mikrotik::logMeIn($client, $username, $password, $_POST['device_ip'] ?? '0.0.0.0', $_POST['device_mac'] ?? '00:00:00:00:00:00');
+            
+            $client->disconnect();
+        }
+    } catch (Exception $e) {
+        error_log('[hotspot-login] MikroTik error: ' . $e->getMessage());
+    }
+
+    // Record session
+    $guestSession = ORM::for_table('hotspot_guest_sessions')->create();
+    $guestSession->phone = $phone;
+    $guestSession->username = $username;
+    $guestSession->access_type = $isTrial ? 'trial' : 'paid';
+    $guestSession->mac_address = $_POST['device_mac'] ?? '';
+    $guestSession->device_ip = $_POST['device_ip'] ?? '';
+    $guestSession->plan = $packageName;
+    $guestSession->session_id = $sessionId;
+    $guestSession->status = 'active';
+    $guestSession->save();
+
+    http_response_code(200);
+    echo json_encode([
+        'status' => 'success',
+        'message' => '✓ Connected! Enjoy your ' . $packageName . '!',
+        'username' => $username,
+        'password' => $password,
+        'profile' => $mikrotikProfile,
+        'is_trial' => $isTrial
+    ]);
+}
+?>

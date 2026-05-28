@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apperstar WiFi - Login</title>
+    <title>Apperstar WiFi</title>
     <style>
         * {
             margin: 0;
@@ -39,7 +39,6 @@
 
         .logo {
             font-size: 48px;
-            font-weight: bold;
             margin-bottom: 10px;
         }
 
@@ -53,53 +52,20 @@
             opacity: 0.9;
         }
 
-        .tabs {
-            display: flex;
-            border-bottom: 2px solid #eee;
-            background: #f9f9f9;
+        .content {
+            padding: 30px 40px;
         }
 
-        .tab-btn {
-            flex: 1;
-            padding: 16px;
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 14px;
+        .step-indicator {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 20px;
+            text-align: center;
             font-weight: 600;
-            color: #666;
-            transition: all 0.3s;
-            border-bottom: 3px solid transparent;
-            margin-bottom: -2px;
-        }
-
-        .tab-btn:hover {
-            color: #667eea;
-            background: #f0f4ff;
-        }
-
-        .tab-btn.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
-        }
-
-        .tab-content {
-            display: none;
-            padding: 30px;
-        }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
         label {
@@ -107,51 +73,37 @@
             font-size: 13px;
             font-weight: 600;
             color: #333;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
-        input {
+        input, select {
             width: 100%;
             padding: 12px;
             border: 2px solid #eee;
             border-radius: 8px;
             font-size: 14px;
-            transition: all 0.3s;
             font-family: inherit;
+            transition: all 0.3s;
         }
 
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        input.error {
-            border-color: #e74c3c;
-        }
-
-        input.success {
-            border-color: #27ae60;
-        }
-
         .form-hint {
-            font-size: 12px;
+            font-size: 11px;
             color: #999;
             margin-top: 4px;
         }
 
-        .form-hint.error {
-            color: #e74c3c;
+        .hidden {
+            display: none;
         }
 
-        .form-hint.success {
-            color: #27ae60;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
+        .visible {
+            display: block;
         }
 
         button {
@@ -161,7 +113,7 @@
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
@@ -176,7 +128,6 @@
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
         }
 
         .message {
@@ -186,27 +137,28 @@
             font-size: 13px;
             display: none;
             animation: slideIn 0.3s;
+            border-left: 4px solid;
         }
 
         .message.error {
             background: #fee;
             color: #c00;
             display: block;
-            border-left: 4px solid #c00;
+            border-left-color: #c00;
         }
 
         .message.success {
             background: #efe;
             color: #060;
             display: block;
-            border-left: 4px solid #060;
+            border-left-color: #060;
         }
 
         .message.info {
             background: #eef;
             color: #006;
             display: block;
-            border-left: 4px solid #006;
+            border-left-color: #006;
         }
 
         @keyframes slideIn {
@@ -235,37 +187,17 @@
             100% { transform: rotate(360deg); }
         }
 
-        .divider {
-            display: flex;
-            align-items: center;
-            margin: 20px 0;
-            color: #999;
-        }
-
-        .divider span {
-            padding: 0 10px;
-            font-size: 12px;
-        }
-
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: #eee;
-        }
-
-        .guest-packages {
+        .packages {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-bottom: 20px;
+            margin: 20px 0;
         }
 
         .package {
             border: 2px solid #eee;
-            border-radius: 12px;
-            padding: 16px;
+            border-radius: 8px;
+            padding: 14px;
             cursor: pointer;
             transition: all 0.3s;
             background: #f9f9f9;
@@ -275,7 +207,7 @@
         .package:hover {
             border-color: #667eea;
             background: #f0f4ff;
-            transform: translateY(-4px);
+            transform: translateY(-2px);
         }
 
         .package.active {
@@ -290,62 +222,40 @@
 
         .package-name {
             font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 6px;
+            font-size: 13px;
+            margin-bottom: 4px;
         }
 
         .package-price {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
         }
 
         .package-duration {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 2px;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            border-radius: 4px;
             font-size: 12px;
-            opacity: 0.8;
-            margin-top: 4px;
-        }
-
-        .info-text {
-            font-size: 12px;
-            color: #999;
-            margin-top: 16px;
-            line-height: 1.6;
-        }
-
-        .success-screen {
-            text-align: center;
-            display: none;
-        }
-
-        .success-screen.show {
-            display: block;
-        }
-
-        .success-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-        }
-
-        .success-screen h2 {
-            color: #27ae60;
-            margin-bottom: 8px;
-            font-size: 24px;
-        }
-
-        .success-screen p {
-            color: #666;
+            color: #006;
             margin-bottom: 20px;
+            line-height: 1.5;
         }
 
-        .verified-badge {
-            display: inline-block;
-            background: #27ae60;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
+        .btn-secondary {
+            background: #f0f4ff;
+            color: #667eea;
             margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e8ff;
         }
     </style>
 </head>
@@ -357,461 +267,377 @@
             <div class="subtitle">Fast, Affordable Internet</div>
         </div>
 
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="signin">Sign In</button>
-            <button class="tab-btn" data-tab="signup">Create Account</button>
-            <button class="tab-btn" data-tab="guest">Guest Access</button>
-        </div>
-
-        <!-- SIGN IN TAB -->
-        <div id="signin" class="tab-content active">
-            <form id="signInForm">
-                <div class="form-group">
-                    <label for="signin-phone">📱 Phone Number</label>
-                    <input 
-                        type="tel" 
-                        id="signin-phone" 
-                        name="phone" 
-                        placeholder="254712345678"
-                        pattern="^254[0-9]{9}$"
-                        required
-                    >
-                    <div class="form-hint">Format: 254XXXXXXXXX (Kenyan number)</div>
-                </div>
-
-                <div class="form-group">
-                    <label for="signin-password">🔐 Password</label>
-                    <input 
-                        type="password" 
-                        id="signin-password" 
-                        name="password" 
-                        placeholder="Enter your password"
-                        required
-                    >
-                </div>
-
-                <button type="submit" id="signInBtn">Sign In</button>
-                <div id="signInMessage" class="message"></div>
-                <div id="signInLoading" class="loading">
-                    <div class="spinner"></div>
-                    <p style="margin-top: 10px; color: #666;">Signing in...</p>
-                </div>
-
-                <div class="divider">
-                    <span>New to Apperstar?</span>
-                </div>
-                <button type="button" onclick="switchTab('signup')" style="background: #f0f4ff; color: #667eea; margin-top: 5px;">
-                    Create Account
-                </button>
-            </form>
-        </div>
-
-        <!-- SIGN UP TAB -->
-        <div id="signup" class="tab-content">
-            <form id="signUpForm">
-                <div class="form-group">
-                    <label for="signup-phone">📱 Phone Number</label>
-                    <input 
-                        type="tel" 
-                        id="signup-phone" 
-                        name="phone" 
-                        placeholder="254712345678"
-                        pattern="^254[0-9]{9}$"
-                        required
-                    >
-                    <div class="form-hint">Format: 254XXXXXXXXX (Kenyan number)</div>
-                </div>
-
-                <div class="form-group">
-                    <label for="signup-email">📧 Email</label>
-                    <input 
-                        type="email" 
-                        id="signup-email" 
-                        name="email" 
-                        placeholder="your@email.com"
-                        required
-                    >
-                    <div class="form-hint">We'll use this to recover your account</div>
-                </div>
-
-                <div class="form-row">
+        <div class="content">
+            <!-- STEP 1: Enter Phone -->
+            <div id="step1" class="step">
+                <div class="step-indicator">Step 1 of 3: Enter Your Phone</div>
+                <form id="form-phone">
                     <div class="form-group">
-                        <label for="signup-fname">First Name</label>
+                        <label for="phone">📱 Phone Number</label>
                         <input 
-                            type="text" 
-                            id="signup-fname" 
-                            name="first_name" 
-                            placeholder="John"
+                            type="tel" 
+                            id="phone" 
+                            placeholder="254712345678"
+                            pattern="^254[0-9]{9}$"
+                            required
+                        >
+                        <div class="form-hint">Format: 254XXXXXXXXX (Kenyan number)</div>
+                    </div>
+                    <button type="submit" id="btn-check-phone">Continue</button>
+                    <div id="msg-phone" class="message"></div>
+                    <div id="load-phone" class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- STEP 2: PIN (New User Setup or Existing User Verify) -->
+            <div id="step2" class="step hidden">
+                <div class="step-indicator" id="step2-title">Step 2 of 3</div>
+                
+                <!-- For NEW users: Set PIN -->
+                <form id="form-setup-pin" class="hidden">
+                    <div class="info-box">
+                        ✨ Welcome! Set a 4-digit PIN for your account and get a free 10-minute trial!
+                    </div>
+                    <div class="form-group">
+                        <label for="setup-pin">🔐 Create 4-Digit PIN</label>
+                        <input 
+                            type="password" 
+                            id="setup-pin" 
+                            placeholder="e.g., 1234"
+                            pattern="^[0-9]{4}$"
+                            maxlength="4"
+                            inputmode="numeric"
+                            required
+                        >
+                        <div class="form-hint">Remember this PIN for future logins</div>
+                    </div>
+                    <button type="submit" id="btn-setup-pin">Create Account & Get Trial</button>
+                    <div id="msg-setup-pin" class="message"></div>
+                    <div id="load-setup-pin" class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </form>
+
+                <!-- For EXISTING users: Verify PIN -->
+                <form id="form-verify-pin" class="hidden">
+                    <div class="form-group">
+                        <label for="verify-pin">🔐 Enter Your 4-Digit PIN</label>
+                        <input 
+                            type="password" 
+                            id="verify-pin" 
+                            placeholder="0000"
+                            pattern="^[0-9]{4}$"
+                            maxlength="4"
+                            inputmode="numeric"
                             required
                         >
                     </div>
+                    <button type="submit" id="btn-verify-pin">Continue</button>
+                    <div id="msg-verify-pin" class="message"></div>
+                    <div id="load-verify-pin" class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </form>
+
+                <button type="button" class="btn-secondary" onclick="goBack()">← Back</button>
+            </div>
+
+            <!-- STEP 3: Select Package -->
+            <div id="step3" class="step hidden">
+                <div class="step-indicator">Step 3 of 3: Select Your Package</div>
+                
+                <form id="form-package">
                     <div class="form-group">
-                        <label for="signup-lname">Last Name</label>
-                        <input 
-                            type="text" 
-                            id="signup-lname" 
-                            name="last_name" 
-                            placeholder="Doe"
-                        >
-                    </div>
-                </div>
+                        <label>📦 Choose Internet Package</label>
+                        <div class="packages" id="packages-grid">
+                            <!-- Trial (only for first-time users) -->
+                            <div class="package full active" data-package='{"name":"Free Trial","key":"trial","price":"FREE","duration":"10 minutes","profile":"TEST-10M"}'>
+                                <div class="package-name">🎁 Free Trial</div>
+                                <div class="package-price">FREE</div>
+                                <div class="package-duration">10 minutes (one time only)</div>
+                            </div>
 
-                <div class="form-group">
-                    <label for="signup-password">🔐 Password</label>
-                    <input 
-                        type="password" 
-                        id="signup-password" 
-                        name="password" 
-                        placeholder="At least 6 characters"
-                        minlength="6"
-                        required
-                    >
-                    <div class="form-hint">Use a strong password with mix of letters and numbers</div>
-                </div>
+                            <!-- Paid Packages -->
+                            <div class="package" data-package='{"name":"1 Hour","key":"1h","price":"KES 50","duration":"1 hour","profile":"1H"}'>
+                                <div class="package-name">1 Hour</div>
+                                <div class="package-price">KES 50</div>
+                            </div>
 
-                <div class="form-group">
-                    <label for="signup-confirm">Confirm Password</label>
-                    <input 
-                        type="password" 
-                        id="signup-confirm" 
-                        name="confirm_password" 
-                        placeholder="Repeat your password"
-                        minlength="6"
-                        required
-                    >
-                </div>
+                            <div class="package" data-package='{"name":"4 Hours","key":"4h","price":"KES 120","duration":"4 hours","profile":"4H"}'>
+                                <div class="package-name">4 Hours</div>
+                                <div class="package-price">KES 120</div>
+                            </div>
 
-                <button type="submit" id="signUpBtn">Create Account</button>
-                <div id="signUpMessage" class="message"></div>
-                <div id="signUpLoading" class="loading">
-                    <div class="spinner"></div>
-                    <p style="margin-top: 10px; color: #666;">Creating account...</p>
-                </div>
+                            <div class="package" data-package='{"name":"8 Hours","key":"8h","price":"KES 250","duration":"8 hours","profile":"8H"}'>
+                                <div class="package-name">8 Hours</div>
+                                <div class="package-price">KES 250</div>
+                            </div>
 
-                <div class="divider">
-                    <span>Already have an account?</span>
-                </div>
-                <button type="button" onclick="switchTab('signin')" style="background: #f0f4ff; color: #667eea; margin-top: 5px;">
-                    Sign In Instead
-                </button>
-            </form>
-        </div>
+                            <div class="package" data-package='{"name":"12 Hours","key":"12h","price":"KES 300","duration":"12 hours","profile":"12H"}'>
+                                <div class="package-name">12 Hours</div>
+                                <div class="package-price">KES 300</div>
+                            </div>
 
-        <!-- GUEST TAB (Trial & Paid) -->
-        <div id="guest" class="tab-content">
-            <form id="guestForm">
-                <div class="form-group">
-                    <label for="guest-phone">📱 Phone Number</label>
-                    <input 
-                        type="tel" 
-                        id="guest-phone" 
-                        name="phone" 
-                        placeholder="254712345678"
-                        pattern="^254[0-9]{9}$"
-                        required
-                    >
-                    <div class="form-hint">Format: 254XXXXXXXXX (Kenyan number)</div>
-                </div>
+                            <div class="package" data-package='{"name":"Daily","key":"daily","price":"KES 300","duration":"1 day","profile":"Daily"}'>
+                                <div class="package-name">📅 Daily</div>
+                                <div class="package-price">KES 300</div>
+                            </div>
 
-                <div class="form-group">
-                    <label>📦 Select Package</label>
-                    <div class="guest-packages">
-                        <!-- Trial Package -->
-                        <div class="package full active" data-package='{"plan":"Trial","price":0,"duration":"10 minutes","system":"trial"}'>
-                            <div class="package-name">🎁 Free Trial</div>
-                            <div class="package-price">FREE</div>
-                            <div class="package-duration">10 minutes (one time only)</div>
-                        </div>
+                            <div class="package" data-package='{"name":"Weekly","key":"weekly","price":"KES 1,500","duration":"7 days","profile":"Weekly"}'>
+                                <div class="package-name">📆 Weekly</div>
+                                <div class="package-price">KES 1,500</div>
+                            </div>
 
-                        <!-- Paid Packages -->
-                        <div class="package" data-package='{"plan":"1 Hour","price":50,"duration":"1 hour","system":"1h"}'>
-                            <div class="package-name">1 Hour</div>
-                            <div class="package-price">KES 50</div>
-                        </div>
-
-                        <div class="package" data-package='{"plan":"3 Hours","price":120,"duration":"3 hours","system":"3h"}'>
-                            <div class="package-name">3 Hours</div>
-                            <div class="package-price">KES 120</div>
-                        </div>
-
-                        <div class="package" data-package='{"plan":"12 Hours","price":250,"duration":"12 hours","system":"12h"}'>
-                            <div class="package-name">12 Hours</div>
-                            <div class="package-price">KES 250</div>
-                        </div>
-
-                        <div class="package" data-package='{"plan":"1 Day","price":300,"duration":"1 day","system":"1d"}'>
-                            <div class="package-name">1 Day</div>
-                            <div class="package-price">KES 300</div>
-                        </div>
-
-                        <div class="package" data-package='{"plan":"1 Week","price":1500,"duration":"1 week","system":"7d"}'>
-                            <div class="package-name">1 Week</div>
-                            <div class="package-price">KES 1,500</div>
-                        </div>
-
-                        <div class="package" data-package='{"plan":"1 Month","price":4500,"duration":"1 month","system":"30d"}'>
-                            <div class="package-name">1 Month</div>
-                            <div class="package-price">KES 4,500</div>
+                            <div class="package" data-package='{"name":"Monthly","key":"monthly","price":"KES 4,500","duration":"30 days","profile":"Monthly"}'>
+                                <div class="package-name">📗 Monthly</div>
+                                <div class="package-price">KES 4,500</div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <button type="submit" id="guestBtn">Connect Now</button>
-                <div id="guestMessage" class="message"></div>
-                <div id="guestLoading" class="loading">
-                    <div class="spinner"></div>
-                    <p style="margin-top: 10px; color: #666;">Processing...</p>
-                </div>
+                    <div id="trial-notice" class="info-box hidden">
+                        🎁 You have one free 10-minute trial! Use it wisely.
+                    </div>
 
-                <div class="info-text">
-                    💡 <strong>Trial:</strong> Use once per phone number. Paid packages renew daily.
-                </div>
-            </form>
+                    <button type="submit" id="btn-select-package">Connect Now</button>
+                    <div id="msg-package" class="message"></div>
+                    <div id="load-package" class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </form>
+
+                <button type="button" class="btn-secondary" onclick="goBack()">← Back</button>
+            </div>
         </div>
     </div>
 
     <script>
-        const API_URL = 'https://network.apperstar.dev/system/hotspot-auth-api.php';
-        let selectedPackage = JSON.parse('{"plan":"Trial","price":0,"duration":"10 minutes","system":"trial"}');
+        const API_URL = 'https://network.apperstar.dev/system/hotspot-simple-api.php';
+        let currentPhone = '';
+        let currentSessionId = '';
+        let isNewUser = false;
+        let selectedPackage = JSON.parse('{"name":"Free Trial","key":"trial","price":"FREE","duration":"10 minutes","profile":"TEST-10M"}');
+        let trialAlreadyUsed = false;
 
-        // Tab switching
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-        }
+        // ========== STEP 1: Check Phone ==========
+        document.getElementById('form-phone').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('phone').value.trim();
+            const btn = document.getElementById('btn-check-phone');
+            const msg = document.getElementById('msg-phone');
+            const load = document.getElementById('load-phone');
 
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+            if (!/^254[0-9]{9}$/.test(phone)) {
+                showMessage(msg, '❌ Invalid format. Use 254XXXXXXXXX', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            load.style.display = 'block';
+
+            try {
+                const response = await fetch(API_URL + '?action=check-phone', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'phone=' + encodeURIComponent(phone)
+                });
+
+                const result = await response.json();
+                load.style.display = 'none';
+
+                if (result.status === 'success') {
+                    currentPhone = phone;
+                    isNewUser = !result.exists;
+
+                    if (isNewUser) {
+                        document.getElementById('form-setup-pin').classList.remove('hidden');
+                        document.getElementById('form-verify-pin').classList.add('hidden');
+                        document.getElementById('step2-title').textContent = 'Step 2 of 3: Create Your PIN';
+                    } else {
+                        document.getElementById('form-setup-pin').classList.add('hidden');
+                        document.getElementById('form-verify-pin').classList.remove('hidden');
+                        document.getElementById('step2-title').textContent = 'Step 2 of 3: Verify Your PIN';
+                    }
+
+                    showStep(2);
+                } else {
+                    showMessage(msg, '❌ ' + result.message, 'error');
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                load.style.display = 'none';
+                showMessage(msg, '❌ Connection error: ' + error.message, 'error');
+                btn.disabled = false;
+            }
         });
 
-        // Package selection (Guest tab)
-        document.querySelectorAll('.guest-packages .package').forEach(pkg => {
+        // ========== STEP 2A: New User PIN Setup ==========
+        document.getElementById('form-setup-pin').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pin = document.getElementById('setup-pin').value;
+            const btn = document.getElementById('btn-setup-pin');
+            const msg = document.getElementById('msg-setup-pin');
+            const load = document.getElementById('load-setup-pin');
+
+            if (!/^[0-9]{4}$/.test(pin)) {
+                showMessage(msg, '❌ PIN must be 4 digits', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            load.style.display = 'block';
+
+            try {
+                const response = await fetch(API_URL + '?action=create-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'phone=' + encodeURIComponent(currentPhone) + '&pin=' + encodeURIComponent(pin)
+                });
+
+                const result = await response.json();
+                load.style.display = 'none';
+
+                if (result.status === 'success') {
+                    currentSessionId = result.session_id;
+                    showMessage(msg, '✓ ' + result.message, 'success');
+                    setTimeout(() => {
+                        selectedPackage = JSON.parse('{"name":"Free Trial","key":"trial","price":"FREE","duration":"10 minutes","profile":"TEST-10M"}');
+                        document.querySelector('.package[data-package*="trial"]').classList.add('active');
+                        showStep(3);
+                        document.getElementById('trial-notice').classList.remove('hidden');
+                    }, 1000);
+                } else {
+                    showMessage(msg, '❌ ' + result.message, 'error');
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                load.style.display = 'none';
+                showMessage(msg, '❌ Error: ' + error.message, 'error');
+                btn.disabled = false;
+            }
+        });
+
+        // ========== STEP 2B: Existing User PIN Verify ==========
+        document.getElementById('form-verify-pin').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pin = document.getElementById('verify-pin').value;
+            const btn = document.getElementById('btn-verify-pin');
+            const msg = document.getElementById('msg-verify-pin');
+            const load = document.getElementById('load-verify-pin');
+
+            if (!/^[0-9]{4}$/.test(pin)) {
+                showMessage(msg, '❌ PIN must be 4 digits', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            load.style.display = 'block';
+
+            try {
+                const response = await fetch(API_URL + '?action=verify-pin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'phone=' + encodeURIComponent(currentPhone) + '&pin=' + encodeURIComponent(pin)
+                });
+
+                const result = await response.json();
+                load.style.display = 'none';
+
+                if (result.status === 'success') {
+                    currentSessionId = result.session_id;
+                    trialAlreadyUsed = result.trial_used;
+
+                    if (trialAlreadyUsed) {
+                        document.querySelector('.package[data-package*="trial"]').style.display = 'none';
+                        document.getElementById('trial-notice').innerHTML = '✓ Trial already used. Select a paid package.';
+                        document.getElementById('trial-notice').classList.remove('hidden');
+                    }
+
+                    showMessage(msg, '✓ ' + result.message, 'success');
+                    setTimeout(() => {
+                        showStep(3);
+                    }, 800);
+                } else {
+                    showMessage(msg, '❌ ' + result.message, 'error');
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                load.style.display = 'none';
+                showMessage(msg, '❌ Error: ' + error.message, 'error');
+                btn.disabled = false;
+            }
+        });
+
+        // ========== STEP 3: Package Selection ==========
+        document.querySelectorAll('.package').forEach(pkg => {
             pkg.addEventListener('click', function() {
-                document.querySelectorAll('.guest-packages .package').forEach(p => p.classList.remove('active'));
+                document.querySelectorAll('.package').forEach(p => p.classList.remove('active'));
                 this.classList.add('active');
                 selectedPackage = JSON.parse(this.dataset.package);
             });
         });
 
-        // SIGN IN FORM
-        document.getElementById('signInForm').addEventListener('submit', async (e) => {
+        document.getElementById('form-package').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const phone = document.getElementById('signin-phone').value.trim();
-            const password = document.getElementById('signin-password').value;
-            const btn = document.getElementById('signInBtn');
-            const msg = document.getElementById('signInMessage');
-            const loading = document.getElementById('signInLoading');
-
-            if (!validatePhone(phone)) {
-                showMessage(msg, '❌ Invalid phone format. Use 254XXXXXXXXX', 'error');
-                return;
-            }
+            const btn = document.getElementById('btn-select-package');
+            const msg = document.getElementById('msg-package');
+            const load = document.getElementById('load-package');
 
             btn.disabled = true;
-            loading.style.display = 'block';
-
-            try {
-                const formData = new URLSearchParams();
-                formData.append('action', 'signin');
-                formData.append('phone', phone);
-                formData.append('password', password);
-
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-                loading.style.display = 'none';
-
-                if (result.status === 'success') {
-                    showMessage(msg, '✓ Welcome ' + result.user.first_name + '! Redirecting...', 'success');
-                    localStorage.setItem('session_id', result.session_id);
-                    localStorage.setItem('user', JSON.stringify(result.user));
-                    setTimeout(() => {
-                        window.location.href = '/hotspot/dashboard.html?authenticated=true';
-                    }, 1500);
-                } else {
-                    showMessage(msg, '⚠️ ' + result.message, 'error');
-                    btn.disabled = false;
-                }
-            } catch (error) {
-                loading.style.display = 'none';
-                showMessage(msg, '❌ Error: ' + error.message, 'error');
-                btn.disabled = false;
-            }
-        });
-
-        // SIGN UP FORM
-        document.getElementById('signUpForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const phone = document.getElementById('signup-phone').value.trim();
-            const email = document.getElementById('signup-email').value.trim();
-            const firstName = document.getElementById('signup-fname').value.trim();
-            const password = document.getElementById('signup-password').value;
-            const confirmPassword = document.getElementById('signup-confirm').value;
-            const btn = document.getElementById('signUpBtn');
-            const msg = document.getElementById('signUpMessage');
-            const loading = document.getElementById('signUpLoading');
-
-            if (!validatePhone(phone)) {
-                showMessage(msg, '❌ Invalid phone format', 'error');
-                return;
-            }
-
-            if (!validateEmail(email)) {
-                showMessage(msg, '❌ Invalid email format', 'error');
-                return;
-            }
-
-            if (password.length < 6) {
-                showMessage(msg, '❌ Password must be at least 6 characters', 'error');
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                showMessage(msg, '❌ Passwords do not match', 'error');
-                return;
-            }
-
-            btn.disabled = true;
-            loading.style.display = 'block';
-
-            try {
-                const formData = new URLSearchParams();
-                formData.append('action', 'signup');
-                formData.append('phone', phone);
-                formData.append('email', email);
-                formData.append('first_name', firstName);
-                formData.append('last_name', document.getElementById('signup-lname').value.trim());
-                formData.append('password', password);
-                formData.append('confirm_password', confirmPassword);
-
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-                loading.style.display = 'none';
-
-                if (result.status === 'success') {
-                    showMessage(msg, '✓ Account created! Signing in...', 'success');
-                    localStorage.setItem('session_id', result.session_id);
-                    localStorage.setItem('user', JSON.stringify(result.user));
-                    setTimeout(() => {
-                        window.location.href = '/hotspot/dashboard.html?authenticated=true';
-                    }, 1500);
-                } else {
-                    showMessage(msg, '⚠️ ' + result.message, 'error');
-                    btn.disabled = false;
-                }
-            } catch (error) {
-                loading.style.display = 'none';
-                showMessage(msg, '❌ Error: ' + error.message, 'error');
-                btn.disabled = false;
-            }
-        });
-
-        // GUEST FORM (Trial/Paid)
-        document.getElementById('guestForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const phone = document.getElementById('guest-phone').value.trim();
-            const btn = document.getElementById('guestBtn');
-            const msg = document.getElementById('guestMessage');
-            const loading = document.getElementById('guestLoading');
-
-            if (!validatePhone(phone)) {
-                showMessage(msg, '❌ Invalid phone format', 'error');
-                return;
-            }
-
-            if (!selectedPackage) {
-                showMessage(msg, '❌ Please select a package', 'error');
-                return;
-            }
-
-            btn.disabled = true;
-            loading.style.display = 'block';
+            load.style.display = 'block';
 
             try {
                 let mac = '$(mac-esc)';
                 let ip = '$(ip)';
-                let identity = '$(identity)';
-                
                 if (mac.startsWith('$')) mac = '00:00:00:00:00:00';
                 if (ip.startsWith('$')) ip = '0.0.0.0';
-                if (identity.startsWith('$')) identity = 'unknown';
 
-                const formData = new URLSearchParams();
-                formData.append('phone', phone);
-                formData.append('package', JSON.stringify(selectedPackage));
-                formData.append('device_mac', mac);
-                formData.append('device_ip', ip);
-                formData.append('router', identity);
-
-                const response = await fetch('https://network.apperstar.dev/system/hotspot-payment-api.php', {
+                const response = await fetch(API_URL + '?action=select-package', {
                     method: 'POST',
-                    body: formData
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'phone=' + encodeURIComponent(currentPhone) + 
+                          '&package=' + encodeURIComponent(selectedPackage.name) +
+                          '&session_id=' + encodeURIComponent(currentSessionId) +
+                          '&device_mac=' + encodeURIComponent(mac) +
+                          '&device_ip=' + encodeURIComponent(ip)
                 });
 
                 const result = await response.json();
-                loading.style.display = 'none';
+                load.style.display = 'none';
 
                 if (result.status === 'success') {
-                    showMessage(msg, '✓ Connected! Redirecting...', 'success');
-                    document.cookie = `hotspot_user=${result.username}; path=/`;
-                    document.cookie = `hotspot_session=${result.session_id}; path=/`;
-                    
-                    if (selectedPackage.price === 0) {
-                        setTimeout(() => {
-                            window.location.href = '/hotspot/dashboard.html?trial=true&phone=' + encodeURIComponent(phone);
-                        }, 1500);
-                    } else {
-                        const form = document.createElement('form');
-                        form.method = 'post';
-                        form.action = '$(link-login-only)';
-                        
-                        const user = document.createElement('input');
-                        user.type = 'hidden';
-                        user.name = 'username';
-                        user.value = result.username;
-                        
-                        const pass = document.createElement('input');
-                        pass.type = 'hidden';
-                        pass.name = 'password';
-                        pass.value = result.password;
-                        
-                        const dst = document.createElement('input');
-                        dst.type = 'hidden';
-                        dst.name = 'dst';
-                        dst.value = '$(link-orig)';
-                        
-                        form.appendChild(user);
-                        form.appendChild(pass);
-                        form.appendChild(dst);
-                        document.body.appendChild(form);
-                        form.submit();
-                    }
+                    showMessage(msg, '✓ ' + result.message, 'success');
+                    setTimeout(() => {
+                        window.location.href = '/hotspot/dashboard.html?phone=' + encodeURIComponent(currentPhone);
+                    }, 1500);
                 } else {
-                    showMessage(msg, '⚠️ ' + (result.message || 'Error processing request'), 'error');
+                    showMessage(msg, '❌ ' + result.message, 'error');
                     btn.disabled = false;
                 }
             } catch (error) {
-                loading.style.display = 'none';
+                load.style.display = 'none';
                 showMessage(msg, '❌ Error: ' + error.message, 'error');
                 btn.disabled = false;
             }
         });
 
-        function validatePhone(phone) {
-            return /^254[0-9]{9}$/.test(phone);
+        // ========== UTILITIES ==========
+        function showStep(stepNum) {
+            document.querySelectorAll('.step').forEach(step => step.classList.add('hidden'));
+            document.getElementById('step' + stepNum).classList.remove('hidden');
         }
 
-        function validateEmail(email) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        function goBack() {
+            let currentStep = null;
+            document.querySelectorAll('.step').forEach((step, idx) => {
+                if (!step.classList.contains('hidden')) currentStep = idx + 1;
+            });
+
+            if (currentStep > 1) {
+                showStep(currentStep - 1);
+            }
         }
 
         function showMessage(element, text, type) {
