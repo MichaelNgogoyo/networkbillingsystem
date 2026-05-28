@@ -5,7 +5,9 @@
  * Integrates directly with MikroTik profiles
  */
 
-require_once __DIR__ . '/boot.php';
+// Initialize application
+set_include_path(dirname(__FILE__) . '/..:' . get_include_path());
+require_once __DIR__ . '/../init.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -51,16 +53,18 @@ function checkPhone() {
 
     if (!$phone) {
         http_response_code(400);
-        return echo json_encode(['status' => 'error', 'message' => 'Phone required']);
+        echo json_encode(['status' => 'error', 'message' => 'Phone required']);
+        exit;
     }
 
     // Validate phone format
     if (!preg_match('/^254[0-9]{9}$/', $phone)) {
         http_response_code(400);
-        return echo json_encode([
+        echo json_encode([
             'status' => 'error',
             'message' => 'Invalid phone format. Use 254XXXXXXXXX'
         ]);
+        exit;
     }
 
     // Check if user exists
@@ -93,19 +97,22 @@ function verifyPin() {
 
     if (!$phone || !$pin) {
         http_response_code(400);
-        return echo json_encode(['status' => 'error', 'message' => 'Phone and PIN required']);
+        echo json_encode(['status' => 'error', 'message' => 'Phone and PIN required']);
+        exit;
     }
 
     // Validate phone format
     if (!preg_match('/^254[0-9]{9}$/', $phone)) {
         http_response_code(400);
-        return echo json_encode(['status' => 'error', 'message' => 'Invalid phone format']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid phone format']);
+        exit;
     }
 
     // Validate PIN format (4 digits)
     if (!preg_match('/^[0-9]{4}$/', $pin)) {
         http_response_code(400);
-        return echo json_encode(['status' => 'error', 'message' => 'PIN must be 4 digits']);
+        echo json_encode(['status' => 'error', 'message' => 'PIN must be 4 digits']);
+        exit;
     }
 
     // Find user
@@ -115,19 +122,21 @@ function verifyPin() {
 
     if (!$user) {
         http_response_code(401);
-        return echo json_encode([
+        echo json_encode([
             'status' => 'error',
             'message' => 'User not found'
         ]);
+        exit;
     }
 
     // Verify PIN
     if (!password_verify($pin, $user->pin)) {
         http_response_code(401);
-        return echo json_encode([
+        echo json_encode([
             'status' => 'error',
             'message' => 'Invalid PIN'
         ]);
+        exit;
     }
 
     // Update last login
@@ -161,25 +170,28 @@ function createNewUser() {
 
     if (!$phone || !$pin) {
         http_response_code(400);
-        return echo json_encode(['status' => 'error', 'message' => 'Phone and PIN required']);
+        echo json_encode(['status' => 'error', 'message' => 'Phone and PIN required']);
+        exit;
     }
 
     // Validate phone format
     if (!preg_match('/^254[0-9]{9}$/', $phone)) {
         http_response_code(400);
-        return echo json_encode([
+        echo json_encode([
             'status' => 'error',
             'message' => 'Invalid phone format. Use 254XXXXXXXXX'
         ]);
+        exit;
     }
 
     // Validate PIN format (4 digits)
     if (!preg_match('/^[0-9]{4}$/', $pin)) {
         http_response_code(400);
-        return echo json_encode([
+        echo json_encode([
             'status' => 'error',
             'message' => 'PIN must be exactly 4 digits'
         ]);
+        exit;
     }
 
     // Check if phone already exists
@@ -189,10 +201,11 @@ function createNewUser() {
 
     if ($existingUser) {
         http_response_code(409);
-        return echo json_encode([
+        echo json_encode([
             'status' => 'error',
             'message' => 'Phone number already registered'
         ]);
+        exit;
     }
 
     // Create new user
@@ -232,7 +245,8 @@ function selectPackage() {
 
     if (!$phone || !$packageName || !$sessionId) {
         http_response_code(400);
-        return echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
+        echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
+        exit;
     }
 
     // Verify session exists
@@ -242,43 +256,60 @@ function selectPackage() {
 
     if (!$session || strtotime($session->expires_at) < time()) {
         http_response_code(401);
-        return echo json_encode(['status' => 'error', 'message' => 'Session expired']);
+        echo json_encode(['status' => 'error', 'message' => 'Session expired']);
+        exit;
     }
 
     // Map package name to MikroTik profile
     $profileMap = [
         'trial' => 'TEST-10M',
+        'freetrial' => 'TEST-10M',
+        '1hour' => '1H',
         '1h' => '1H',
+        '4hours' => '4H',
         '4h' => '4H',
+        '8hours' => '8H',
         '8h' => '8H',
+        '12hours' => '12H',
         '12h' => '12H',
         'daily' => 'Daily',
+        '1day' => 'Daily',
         'weekly' => 'Weekly',
-        'monthly' => 'Monthly'
+        '1week' => 'Weekly',
+        'monthly' => 'Monthly',
+        '1month' => 'Monthly'
     ];
 
-    $packageKey = strtolower(str_replace(' ', '', $packageName));
+    $packageKey = strtolower(str_replace([' ', 'hours', 'hour', 'days', 'day', 'weeks', 'week', 'months', 'month'], '', $packageName));
     if (!isset($profileMap[$packageKey])) {
         http_response_code(400);
-        return echo json_encode(['status' => 'error', 'message' => 'Invalid package']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid package: ' . $packageKey]);
+        exit;
     }
 
     $mikrotikProfile = $profileMap[$packageKey];
     
     // Check if this is trial
-    $isTrial = ($packageKey === 'trial');
+    $isTrial = in_array($packageKey, ['trial', 'freetrial']);
     $user = ORM::for_table('hotspot_users')
         ->where('phone', $phone)
         ->find_one();
+
+    if (!$user) {
+        http_response_code(404);
+        echo json_encode(['status' => 'error', 'message' => 'User not found']);
+        exit;
+    }
 
     if ($isTrial) {
         // Check if trial already used
         if ($user->trial_used) {
             http_response_code(403);
-            return echo json_encode([
+            echo json_encode([
                 'status' => 'error',
                 'message' => 'Trial already used! Please select a paid package or upgrade.'
             ]);
+            exit;
         }
 
         // Mark trial as used
