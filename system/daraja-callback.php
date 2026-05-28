@@ -175,15 +175,67 @@ function createMikrotikUserForPayment($phone, $plan, $duration, $mac, $ip, $syst
     
     try {
         // Generate unique username
-        $username = 'hotspot_' . time();
+        $username = 'paid_' . time();
         $password = generatePassword(12);
         
         // Calculate expiry time based on duration
         $durationSeconds = parseDurationToSeconds($duration);
         $expiryTime = time() + $durationSeconds;
         
-        // TODO: Create user on MikroTik router via system/autoload/Mikrotik.php
-        // For now, we'll prepare the credentials for storage
+        // Create user on MikroTik router
+        require_once(__DIR__ . '/autoload/Mikrotik.php');
+        
+        $routerIp = '192.168.88.1';
+        $routerPort = 8728;
+        $routerUser = 'admin';
+        $routerPass = '1234';
+        
+        // Try to get router config from database
+        $router = ORM::for_table('tbl_routers')->where('ip', '192.168.88.1')->find_one();
+        if ($router) {
+            $ipPort = $router['ip_port'] ?? '192.168.88.1:8728';
+            $parts = explode(':', $ipPort);
+            $routerIp = $parts[0];
+            $routerPort = isset($parts[1]) ? $parts[1] : 8728;
+            $routerUser = $router['username'] ?? 'admin';
+            $routerPass = $router['password'] ?? '1234';
+        }
+        
+        error_log('Creating paid MikroTik user: ' . $username . ' for plan: ' . $plan);
+        
+        $client = Mikrotik::getClient($routerIp . ':' . $routerPort, $routerUser, $routerPass);
+        
+        if ($client) {
+            // Ensure profile exists
+            $profileName = 'paid';
+            try {
+                Mikrotik::setHotspotPlan($client, $profileName, 0, '0/0');
+                error_log('Paid profile is ready: ' . $profileName);
+            } catch (Exception $e) {
+                error_log('Note: Could not create paid profile: ' . $e->getMessage());
+            }
+            
+            // Create user with the paid profile
+            $planData = [
+                'typebp' => 'Unlimited',
+                'name_plan' => $profileName
+            ];
+            $customer = [
+                'username' => $username,
+                'password' => $password,
+                'email' => $phone . '@hotspot.local',
+                'fullname' => 'Paid User - ' . $phone . ' - ' . $plan
+            ];
+            
+            Mikrotik::addHotspotUser($client, $planData, $customer);
+            error_log('MikroTik paid user created: ' . $username);
+            
+            // Login the user from server side
+            Mikrotik::logMeIn($client, $username, $password, $ip, $mac);
+            error_log('MikroTik paid user logged in: ' . $username);
+        } else {
+            error_log('WARNING: Could not connect to MikroTik for paid user');
+        }
         
         return [
             'username' => $username,
@@ -195,7 +247,7 @@ function createMikrotikUserForPayment($phone, $plan, $duration, $mac, $ip, $syst
         ];
         
     } catch (Exception $e) {
-        error_log('Failed to create MikroTik user: ' . $e->getMessage());
+        error_log('Failed to create MikroTik paid user: ' . $e->getMessage());
         return null;
     }
 }

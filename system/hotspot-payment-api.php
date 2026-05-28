@@ -170,10 +170,22 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
             $client = Mikrotik::getClient($routerIp . ':' . $routerPort, $routerUser, $routerPass);
             
             if ($client) {
-                // Create a simple trial profile if not exists
+                // Ensure "trial" profile exists for trial users
+                $profileName = 'trial';
+                error_log('Ensuring hotspot profile exists: ' . $profileName);
+                
+                try {
+                    // Try to set/create the trial profile with unlimited access
+                    Mikrotik::setHotspotPlan($client, $profileName, 0, '0/0');
+                    error_log('Trial profile is ready: ' . $profileName);
+                } catch (Exception $e) {
+                    error_log('Note: Could not create profile (may already exist): ' . $e->getMessage());
+                }
+                
+                // Create user with the trial profile
                 $plan = [
                     'typebp' => 'Unlimited',
-                    'name_plan' => 'default'
+                    'name_plan' => $profileName
                 ];
                 $customer = [
                     'username' => $trialUser,
@@ -182,7 +194,7 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
                     'fullname' => 'Trial User - ' . $phone
                 ];
                 
-                error_log('Creating MikroTik user: ' . $trialUser);
+                error_log('Creating MikroTik user: ' . $trialUser . ' with profile: ' . $profileName);
                 Mikrotik::addHotspotUser($client, $plan, $customer);
                 error_log('MikroTik user created successfully: ' . $trialUser);
                 
