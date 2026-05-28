@@ -414,7 +414,12 @@
     </div>
 
     <script>
-        const API_URL = 'https://network.apperstar.dev/system/hotspot-simple-api.php';
+        // API endpoint
+        const REMOTE_API_URL = 'https://network.apperstar.dev/system/hotspot-simple-api.php';
+        const LOCAL_API_URL = 'https://network.apperstar.dev/mikrotik-hotspot/api-proxy.php';
+        
+        let API_URL = REMOTE_API_URL;
+        
         let currentPhone = '';
         let currentSessionId = '';
         let isNewUser = false;
@@ -468,7 +473,11 @@
                 }
             } catch (error) {
                 load.style.display = 'none';
-                showMessage(msg, '❌ Connection error: ' + error.message, 'error');
+                console.error('API Error:', error);
+                const errorMsg = error.message === 'Failed to fetch' 
+                    ? 'Network error - ensure WiFi has internet access' 
+                    : error.message;
+                showMessage(msg, '❌ ' + errorMsg, 'error');
                 btn.disabled = false;
             }
         });
