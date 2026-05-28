@@ -417,19 +417,14 @@
         // Determine which API endpoint to use based on the current location
         function getApiUrl() {
             const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
             
-            // If on the local hotspot network, we'll need to handle differently
-            if (hostname === '192.168.88.1') {
-                // On hotspot, we'll use HTTPS but accept that it might fail
-                return 'https://network.apperstar.dev/system/hotspot-simple-api.php';
+            // If on the local hotspot network, use HTTP local endpoint
+            if (hostname === '192.168.88.1' || hostname === 'localhost') {
+                return 'http://' + hostname + '/system/hotspot-simple-api.php';
             }
             
-            // If on localhost
-            if (hostname === 'localhost' || hostname === '127.0.0.1') {
-                return 'http://localhost/system/hotspot-simple-api.php';
-            }
-            
-            // If on production domain
+            // If running on network.apperstar.dev, use HTTPS
             if (hostname.includes('network.apperstar.dev') || hostname.includes('apperstar.dev')) {
                 return 'https://network.apperstar.dev/system/hotspot-simple-api.php';
             }
@@ -439,14 +434,16 @@
         }
         
         let API_URL = getApiUrl();
+        const REMOTE_API_URL = 'https://network.apperstar.dev/system/hotspot-simple-api.php';
         const HOTSPOT_MODE = window.location.hostname === '192.168.88.1';
-        console.log('Using API_URL:', API_URL, 'HOTSPOT_MODE:', HOTSPOT_MODE);
         
         let currentPhone = '';
         let currentSessionId = '';
         let isNewUser = false;
         let selectedPackage = JSON.parse('{"name":"Free Trial","key":"trial","price":"FREE","duration":"10 minutes","profile":"TEST-10M"}');
         let trialAlreadyUsed = false;
+
+        console.log('🔧 Hotspot Auth Init - Mode:', HOTSPOT_MODE ? 'HOTSPOT' : 'PRODUCTION', 'API:', API_URL);
 
         // ========== STEP 1: Check Phone ==========
         document.getElementById('form-phone').addEventListener('submit', async (e) => {
@@ -470,8 +467,7 @@
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: 'phone=' + encodeURIComponent(phone),
                     mode: 'cors',
-                    cache: 'no-store',
-                    timeout: 5000
+                    cache: 'no-store'
                 });
 
                 if (!response.ok) {
@@ -484,44 +480,6 @@
                 if (result.status === 'success') {
                     currentPhone = phone;
                     isNewUser = !result.exists;
-                    if (isNewUser) {
-                        goToStep(2);
-                        showMessage(document.getElementById('step2msg'), '✓ Create a 4-digit PIN', 'success');
-                    } else {
-                        goToStep(2);
-                        showMessage(document.getElementById('step2msg'), '✓ Enter your PIN', 'success');
-                    }
-                } else {
-                    showMessage(msg, '❌ ' + (result.message || 'Invalid response'), 'error');
-                }
-                btn.disabled = false;
-            } catch (error) {
-                load.style.display = 'none';
-                console.error('API Error:', error, 'API_URL:', API_URL);
-                
-                // If on hotspot and API is unreachable, allow local validation
-                if (HOTSPOT_MODE && error.message === 'Failed to fetch') {
-                    console.warn('Hotspot mode: API unreachable, proceeding with local validation');
-                    currentPhone = phone;
-                    isNewUser = true;  // Assume new user on hotspot
-                    goToStep(2);
-                    showMessage(document.getElementById('step2msg'), '✓ Create a 4-digit PIN (local validation)', 'success');
-                    btn.disabled = false;
-                    return;
-                }
-                
-                let errorMsg = 'Connection error';
-                if (error.message === 'Failed to fetch') {
-                    errorMsg = 'Cannot reach authentication server. Check your internet connection.';
-                } else if (error.message.includes('HTTP')) {
-                    errorMsg = 'Server error: ' + error.message;
-                } else {
-                    errorMsg = error.message || 'Network error';
-                }
-                
-                showMessage(msg, '❌ ' + errorMsg, 'error');
-                btn.disabled = false;
-            }
 
                     if (isNewUser) {
                         document.getElementById('form-setup-pin').classList.remove('hidden');
@@ -540,11 +498,27 @@
                 }
             } catch (error) {
                 load.style.display = 'none';
-                console.error('API Error:', error, 'API_URL:', API_URL);
+                console.error('❌ API Error:', error.message, 'API_URL:', API_URL);
+                
+                // If on hotspot and API is unreachable, allow local validation
+                if (HOTSPOT_MODE && (error.message === 'Failed to fetch' || error.message.includes('timeout'))) {
+                    console.warn('⚠️  Hotspot mode: API unreachable, proceeding with local validation');
+                    currentPhone = phone;
+                    isNewUser = true;  // Assume new user on hotspot for initial auth
+                    
+                    // Show setup PIN form for new users
+                    document.getElementById('form-setup-pin').classList.remove('hidden');
+                    document.getElementById('form-verify-pin').classList.add('hidden');
+                    document.getElementById('step2-title').textContent = 'Step 2 of 3: Create Your PIN';
+                    
+                    showStep(2);
+                    btn.disabled = false;
+                    return;
+                }
                 
                 let errorMsg = 'Connection error';
                 if (error.message === 'Failed to fetch') {
-                    errorMsg = 'Cannot reach API - check your internet connection or WiFi settings';
+                    errorMsg = 'Cannot reach authentication server - check your internet connection';
                 } else if (error.message.includes('HTTP')) {
                     errorMsg = 'Server error: ' + error.message;
                 } else {
@@ -597,6 +571,24 @@
                 }
             } catch (error) {
                 load.style.display = 'none';
+                console.error('❌ Create User Error:', error.message);
+                
+                // If on hotspot and API is unreachable, generate a local session ID and proceed
+                if (HOTSPOT_MODE && (error.message === 'Failed to fetch' || error.message.includes('timeout'))) {
+                    console.warn('⚠️  Hotspot mode: Generating local session for offline auth');
+                    // Generate a local session ID for offline authentication
+                    currentSessionId = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+                        .map(b => b.toString(16).padStart(2, '0')).join('');
+                    showMessage(msg, '✓ Account created locally! Proceeding with trial...', 'success');
+                    setTimeout(() => {
+                        selectedPackage = JSON.parse('{"name":"Free Trial","key":"trial","price":"FREE","duration":"10 minutes","profile":"TEST-10M"}');
+                        document.querySelector('.package[data-package*="trial"]').classList.add('active');
+                        showStep(3);
+                        document.getElementById('trial-notice').classList.remove('hidden');
+                    }, 1000);
+                    return;
+                }
+                
                 showMessage(msg, '❌ Error: ' + error.message, 'error');
                 btn.disabled = false;
             }
