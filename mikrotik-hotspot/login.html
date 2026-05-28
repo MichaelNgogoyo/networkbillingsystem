@@ -302,14 +302,26 @@
         // Form submission
         document.getElementById('paymentForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log('Form submitted');
 
-            const phone = document.getElementById('phone').value;
+            const phone = document.getElementById('phone').value.trim();
             const btn = document.getElementById('submitBtn');
             const msg = document.getElementById('message');
             const loading = document.getElementById('loading');
 
-            if (!phone || !selectedPackage) {
-                showMessage('Please enter phone number and select package', 'error');
+            if (!phone) {
+                showMessage('Please enter your phone number', 'error');
+                return;
+            }
+
+            if (!selectedPackage) {
+                showMessage('Please select a package', 'error');
+                return;
+            }
+
+            // Validate phone format
+            if (!/^254[0-9]{9}$/.test(phone)) {
+                showMessage('Invalid phone. Use format: 254712345678', 'error');
                 return;
             }
 
@@ -318,12 +330,17 @@
             msg.style.display = 'none';
 
             try {
-                // Get MikroTik variables
-                const mac = '$(mac-esc)';
-                const ip = '$(ip)';
-                const identity = '$(identity)';
+                // Get MikroTik variables (may be empty if not in hotspot context)
+                let mac = '$(mac-esc)';
+                let ip = '$(ip)';
+                let identity = '$(identity)';
                 
-                console.log('Submitting form with:', {phone, mac, ip, identity, package: selectedPackage});
+                // If variables weren't substituted, use defaults
+                if (mac.startsWith('$')) mac = '00:00:00:00:00:00';
+                if (ip.startsWith('$')) ip = '0.0.0.0';
+                if (identity.startsWith('$')) identity = 'unknown';
+                
+                console.log('Form data:', {phone, mac, ip, identity, package: selectedPackage});
 
                 const formData = new URLSearchParams();
                 formData.append('phone', phone);
@@ -332,21 +349,29 @@
                 formData.append('device_ip', ip);
                 formData.append('router', identity);
 
-                console.log('Sending to API...');
+                console.log('Sending API request...');
                 const response = await fetch('https://network.apperstar.dev/system/hotspot-payment-api.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: formData.toString()
                 });
 
-                console.log('API Response status:', response.status);
-                const result = await response.json();
-                console.log('API Response:', result);
+                console.log('API response status:', response.status);
+                const responseText = await response.text();
+                console.log('API response text:', responseText);
                 
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    throw new Error('Invalid API response: ' + responseText.substring(0, 200));
+                }
+                
+                console.log('Parsed result:', result);
                 loading.style.display = 'none';
 
                 if (result.status === 'success') {
-                    console.log('Success! Setting cookies...');
+                    console.log('Payment successful!');
                     document.cookie = `hotspot_user=${result.username}; path=/`;
                     document.cookie = `hotspot_session=${result.session_id}; path=/`;
                     
@@ -354,13 +379,13 @@
                     
                     if (selectedPackage.price === 0) {
                         // Trial - redirect to dashboard
-                        console.log('Trial user - redirecting to dashboard');
+                        console.log('Redirecting trial user to dashboard');
                         setTimeout(() => {
-                            window.location.href = '/hotspot/dashboard.html?trial=true';
+                            window.location.href = '/hotspot/dashboard.html?trial=true&phone=' + encodeURIComponent(phone);
                         }, 1500);
                     } else {
                         // Paid - auto-login to MikroTik
-                        console.log('Paid user - submitting MikroTik login form');
+                        console.log('Submitting MikroTik login form');
                         const form = document.createElement('form');
                         form.method = 'post';
                         form.action = '$(link-login-only)';
@@ -387,14 +412,15 @@
                         form.submit();
                     }
                 } else {
-                    showMessage('Error: ' + (result.message || 'Unknown error'), 'error');
+                    const errorMsg = result.message || result.error || 'Unknown error occurred';
+                    showMessage('⚠️ ' + errorMsg, 'error');
                     console.error('API error:', result);
                     btn.disabled = false;
                 }
             } catch (error) {
                 loading.style.display = 'none';
-                console.error('Fetch error:', error);
-                showMessage('Connection error: ' + error.message, 'error');
+                console.error('Request failed:', error);
+                showMessage('❌ Error: ' + error.message, 'error');
                 btn.disabled = false;
             }
         });
