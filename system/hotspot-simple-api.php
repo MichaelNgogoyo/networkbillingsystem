@@ -212,6 +212,8 @@ function createNewUser() {
     $user = ORM::for_table('hotspot_users')->create();
     $user->phone = $phone;
     $user->pin = password_hash($pin, PASSWORD_BCRYPT);
+    $user->email = 'phone_' . $phone . '@hotspot.local'; // Default email for backward compat
+    $user->password = password_hash(bin2hex(random_bytes(8)), PASSWORD_BCRYPT); // Unused, for backward compat
     $user->trial_used = 0;
     $user->status = 'active';
     $user->created_at = date('Y-m-d H:i:s');
@@ -322,10 +324,16 @@ function selectPackage() {
     $username = strtolower($packageKey) . '_' . $shortPhone . '_' . time();
     $password = bin2hex(random_bytes(6)); // Random 12-char password
 
-    // Create user in MikroTik via API
+    // Create user in MikroTik via API (with timeout)
+    $mikrotikSuccess = false;
     try {
         require_once __DIR__ . '/autoload/Mikrotik.php';
-        $client = Mikrotik::getClient('192.168.88.1', 'admin', '1234');
+        
+        // Set a 5-second timeout for connection attempts
+        $originalTimeout = ini_get('default_socket_timeout');
+        ini_set('default_socket_timeout', 5);
+        
+        $client = @Mikrotik::getClient('192.168.88.1', 'admin', '1234');
         
         if ($client) {
             // Create hotspot user with profile
@@ -339,8 +347,12 @@ function selectPackage() {
             Mikrotik::logMeIn($client, $username, $password, $_POST['device_ip'] ?? '0.0.0.0', $_POST['device_mac'] ?? '00:00:00:00:00:00');
             
             $client->disconnect();
+            $mikrotikSuccess = true;
         }
+        
+        ini_set('default_socket_timeout', $originalTimeout);
     } catch (Exception $e) {
+        ini_set('default_socket_timeout', $originalTimeout ?? ini_get('default_socket_timeout'));
         error_log('[hotspot-login] MikroTik error: ' . $e->getMessage());
     }
 
@@ -363,7 +375,9 @@ function selectPackage() {
         'username' => $username,
         'password' => $password,
         'profile' => $mikrotikProfile,
-        'is_trial' => $isTrial
+        'is_trial' => $isTrial,
+        'mikrotik_ready' => $mikrotikSuccess
     ]);
+    exit;
 }
 ?>
