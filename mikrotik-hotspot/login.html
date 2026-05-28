@@ -414,11 +414,27 @@
     </div>
 
     <script>
-        // API endpoint
-        const REMOTE_API_URL = 'https://network.apperstar.dev/system/hotspot-simple-api.php';
-        const LOCAL_API_URL = 'https://network.apperstar.dev/mikrotik-hotspot/api-proxy.php';
+        // Determine which API endpoint to use based on the current location
+        function getApiUrl() {
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            
+            // If on the local hotspot network, use HTTP local endpoint
+            if (hostname === '192.168.88.1' || hostname === 'localhost') {
+                return 'http://' + hostname + '/system/hotspot-simple-api.php';
+            }
+            
+            // If running on network.apperstar.dev, use HTTPS
+            if (hostname.includes('network.apperstar.dev') || hostname.includes('apperstar.dev')) {
+                return 'https://network.apperstar.dev/system/hotspot-simple-api.php';
+            }
+            
+            // Default to HTTPS remote API
+            return 'https://network.apperstar.dev/system/hotspot-simple-api.php';
+        }
         
-        let API_URL = REMOTE_API_URL;
+        let API_URL = getApiUrl();
+        const REMOTE_API_URL = 'https://network.apperstar.dev/system/hotspot-simple-api.php';
         
         let currentPhone = '';
         let currentSessionId = '';
@@ -446,8 +462,14 @@
                 const response = await fetch(API_URL + '?action=check-phone', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'phone=' + encodeURIComponent(phone)
+                    body: 'phone=' + encodeURIComponent(phone),
+                    mode: 'cors',
+                    cache: 'no-store'
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
 
                 const result = await response.json();
                 load.style.display = 'none';
@@ -473,10 +495,17 @@
                 }
             } catch (error) {
                 load.style.display = 'none';
-                console.error('API Error:', error);
-                const errorMsg = error.message === 'Failed to fetch' 
-                    ? 'Network error - ensure WiFi has internet access' 
-                    : error.message;
+                console.error('API Error:', error, 'API_URL:', API_URL);
+                
+                let errorMsg = 'Connection error';
+                if (error.message === 'Failed to fetch') {
+                    errorMsg = 'Cannot reach API - check your internet connection or WiFi settings';
+                } else if (error.message.includes('HTTP')) {
+                    errorMsg = 'Server error: ' + error.message;
+                } else {
+                    errorMsg = error.message || 'Network error';
+                }
+                
                 showMessage(msg, '❌ ' + errorMsg, 'error');
                 btn.disabled = false;
             }
