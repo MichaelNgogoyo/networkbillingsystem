@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apperstar WiFi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .packages {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .package {
+            border: 2px solid #eee;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f9f9f9;
+        }
+
+        .package:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+            transform: translateY(-4px);
+        }
+
+        .package.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .package.full {
+            grid-column: 1 / -1;
+        }
+
+        .package-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .package-price {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .package-duration {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .message.error {
+            background: #fee;
+            color: #c00;
+            display: block;
+        }
+
+        .message.success {
+            background: #efe;
+            color: #060;
+            display: block;
+        }
+
+        .message.info {
+            background: #eef;
+            color: #006;
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">WiFi</div>
+            <h1>Apperstar Hotspot</h1>
+            <div class="subtitle">Fast, Affordable Internet</div>
+        </div>
+
+        <form id="paymentForm">
+            <div class="form-group">
+                <label for="phone">📱 Phone Number</label>
+                <input 
+                    type="tel" 
+                    id="phone" 
+                    name="phone" 
+                    placeholder="254712345678"
+                    pattern="^254[0-9]{9}$"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>📦 Select Package</label>
+                <div class="packages">
+                    <!-- Trial Package -->
+                    <div class="package full active" data-package='{"plan":"Trial","price":0,"duration":"10 minutes","system":"trial"}'>
+                        <div class="package-name">🎁 Free Trial</div>
+                        <div class="package-price">FREE</div>
+                        <div class="package-duration">10 minutes (one time only)</div>
+                    </div>
+
+                    <!-- Paid Packages -->
+                    <div class="package" data-package='{"plan":"1 Hour","price":50,"duration":"1 hour","system":"1h"}'>
+                        <div class="package-name">1 Hour</div>
+                        <div class="package-price">KES 50</div>
+                    </div>
+
+                    <div class="package" data-package='{"plan":"3 Hours","price":120,"duration":"3 hours","system":"3h"}'>
+                        <div class="package-name">3 Hours</div>
+                        <div class="package-price">KES 120</div>
+                    </div>
+
+                    <div class="package" data-package='{"plan":"12 Hours","price":250,"duration":"12 hours","system":"12h"}'>
+                        <div class="package-name">12 Hours</div>
+                        <div class="package-price">KES 250</div>
+                    </div>
+
+                    <div class="package" data-package='{"plan":"1 Day","price":300,"duration":"1 day","system":"1d"}'>
+                        <div class="package-name">1 Day</div>
+                        <div class="package-price">KES 300</div>
+                    </div>
+
+                    <div class="package" data-package='{"plan":"1 Week","price":1500,"duration":"1 week","system":"7d"}'>
+                        <div class="package-name">1 Week</div>
+                        <div class="package-price">KES 1,500</div>
+                    </div>
+
+                    <div class="package" data-package='{"plan":"1 Month","price":4500,"duration":"1 month","system":"30d"}'>
+                        <div class="package-name">1 Month</div>
+                        <div class="package-price">KES 4,500</div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn">Connect Now</button>
+            <div id="message" class="message"></div>
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px; color: #666;">Processing...</p>
+            </div>
+
+            <div class="info-text">
+                💡 <strong>Trial:</strong> Use once per phone number. Paid packages renew daily.
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let selectedPackage = JSON.parse('{"plan":"Trial","price":0,"duration":"10 minutes","system":"trial"}');
+
+        // Package selection
+        document.querySelectorAll('.package').forEach(pkg => {
+            pkg.addEventListener('click', function() {
+                document.querySelectorAll('.package').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                selectedPackage = JSON.parse(this.dataset.package);
+            });
+        });
+
+        // Form submission
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const phone = document.getElementById('phone').value;
+            const btn = document.getElementById('submitBtn');
+            const msg = document.getElementById('message');
+            const loading = document.getElementById('loading');
+
+            if (!phone || !selectedPackage) {
+                showMessage('Please select a package', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            loading.style.display = 'block';
+            msg.style.display = 'none';
+
+            try {
+                const response = await fetch('https://network.apperstar.dev/system/hotspot-payment-api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `phone=${encodeURIComponent(phone)}&package=${encodeURIComponent(JSON.stringify(selectedPackage))}&device_mac=$(mac-esc)&device_ip=$(ip)&router=$(identity)`
+                });
+
+                const result = await response.json();
+                loading.style.display = 'none';
+
+                if (result.status === 'success') {
+                    document.cookie = `hotspot_user=${result.username}; path=/`;
+                    document.cookie = `hotspot_session=${result.session_id}; path=/`;
+                    
+                    showMessage('✓ Connected! Redirecting...', 'success');
+                    
+                    if (selectedPackage.price === 0) {
+                        // Trial - redirect to dashboard
+                        setTimeout(() => {
+                            window.location.href = '/hotspot/dashboard.html?trial=true';
+                        }, 1000);
+                    } else {
+                        // Paid - auto-login to MikroTik
+                        const form = document.createElement('form');
+                        form.method = 'post';
+                        form.action = '$(link-login-only)';
+                        
+                        const user = document.createElement('input');
+                        user.type = 'hidden';
+                        user.name = 'username';
+                        user.value = result.username;
+                        
+                        const pass = document.createElement('input');
+                        pass.type = 'hidden';
+                        pass.name = 'password';
+                        pass.value = result.password;
+                        
+                        const dst = document.createElement('input');
+                        dst.type = 'hidden';
+                        dst.name = 'dst';
+                        dst.value = '$(link-orig)';
+                        
+                        form.appendChild(user);
+                        form.appendChild(pass);
+                        form.appendChild(dst);
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                } else {
+                    showMessage('Error: ' + result.message, 'error');
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                showMessage('Connection error. Try again.', 'error');
+                btn.disabled = false;
+            }
+        });
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + type;
+        }
+    </script>
+</body>
+</html>

@@ -3,757 +3,384 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hostel WiFi Access</title>
+    <title>Apperstar WiFi</title>
     <style>
-        :root {
-            --bg-a: #0d1528;
-            --bg-b: #1b2b50;
-            --panel: rgba(13, 19, 35, 0.92);
-            --panel-soft: rgba(23, 35, 64, 0.82);
-            --line: rgba(255, 255, 255, 0.11);
-            --text: #f5f8ff;
-            --muted: #afbdd8;
-            --brand: #ffb74d;
-            --brand-2: #5de2cc;
-            --ok: #6de49d;
-            --warn: #ffdf6d;
-            --danger: #ff8f8f;
-            --radius: 18px;
-            --radius-lg: 24px;
-        }
-
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
 
         body {
-            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
-            color: var(--text);
-            background:
-                radial-gradient(circle at 15% 12%, rgba(93, 226, 204, 0.20), transparent 24%),
-                radial-gradient(circle at 85% 5%, rgba(255, 183, 77, 0.22), transparent 24%),
-                linear-gradient(140deg, var(--bg-a), var(--bg-b));
-            padding: 16px;
-        }
-
-        .wrap {
-            width: 100%;
-            max-width: 1220px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            gap: 16px;
-        }
-
-        .card {
-            border: 1px solid var(--line);
-            border-radius: var(--radius-lg);
-            background: var(--panel);
-            backdrop-filter: blur(8px);
-            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
-        }
-
-        .left {
-            padding: 22px;
-        }
-
-        .right {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
         }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 8px;
-        }
-
-        .logo {
-            width: 46px;
-            height: 46px;
-            border-radius: 14px;
-            display: grid;
-            place-items: center;
-            font-weight: 800;
-            color: #131313;
-            background: linear-gradient(135deg, var(--brand), var(--brand-2));
-        }
-
-        h1, h2, h3, p {
-            margin: 0;
-        }
-
-        .sub {
-            color: var(--muted);
-            margin-top: 6px;
-            line-height: 1.5;
-        }
-
-        .usage-head {
-            margin-top: 16px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .usage-row {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 8px;
-        }
-
-        .usage-btn {
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: var(--panel-soft);
-            color: var(--text);
-            padding: 10px;
-            cursor: pointer;
-            font-size: 0.86rem;
-            font-weight: 700;
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
             text-align: center;
         }
 
-        .usage-btn.active {
-            border-color: rgba(93, 226, 204, 0.6);
-            background: rgba(93, 226, 204, 0.18);
+        .header {
+            margin-bottom: 30px;
         }
 
-        .plans {
-            margin-top: 12px;
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
+        .logo {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
         }
 
-        .plan {
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-            text-align: left;
-            color: var(--text);
-            padding: 12px;
-            cursor: pointer;
-            min-height: 122px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-        }
-
-        .plan.active {
-            border-color: rgba(255, 183, 77, 0.72);
-            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24);
-        }
-
-        .plan.recommended::after {
-            content: "Recommended";
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            padding: 4px 7px;
-            border-radius: 999px;
-            font-size: 0.67rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            color: #123;
-            background: var(--warn);
-        }
-
-        .plan-title {
-            font-weight: 800;
-            font-size: 0.98rem;
-            padding-right: 76px;
-        }
-
-        .plan-note {
-            color: var(--muted);
-            font-size: 0.83rem;
-            line-height: 1.4;
-            margin-top: 6px;
-        }
-
-        .price {
-            margin-top: 10px;
-            display: inline-flex;
-            width: fit-content;
-            border-radius: 999px;
-            padding: 6px 10px;
-            color: #1d1d1d;
-            background: linear-gradient(135deg, var(--brand), #ffe0b0);
-            font-size: 0.8rem;
-            font-weight: 800;
-        }
-
-        .price.free {
-            background: linear-gradient(135deg, var(--ok), #d5ffe2);
-        }
-
-        .tabs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .tab {
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: var(--panel-soft);
-            color: var(--text);
-            padding: 11px;
-            font-weight: 800;
-            cursor: pointer;
-        }
-
-        .tab.active {
-            color: #1d1d1d;
-            border-color: transparent;
-            background: linear-gradient(135deg, var(--brand), #ffe0b0);
-        }
-
-        .pane {
-            display: none;
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            background: var(--panel-soft);
-            padding: 14px;
-        }
-
-        .pane.active {
-            display: block;
-        }
-
-        .field {
-            margin-bottom: 11px;
-        }
-
-        .field label {
-            display: block;
-            font-size: 0.86rem;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
-
-        .field input {
-            width: 100%;
-            border: 1px solid var(--line);
-            border-radius: 11px;
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--text);
-            padding: 12px;
-            outline: none;
-        }
-
-        .field input:focus {
-            border-color: rgba(93, 226, 204, 0.7);
-            box-shadow: 0 0 0 3px rgba(93, 226, 204, 0.18);
-        }
-
-        .btn-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .btn {
-            border: 0;
-            border-radius: 12px;
-            padding: 12px;
-            font-weight: 800;
-            cursor: pointer;
-        }
-
-        .btn.main {
-            background: linear-gradient(135deg, var(--brand), #ffe0b0);
-            color: #1c1c1c;
-        }
-
-        .btn.alt {
-            border: 1px solid var(--line);
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--text);
-        }
-
-        .status {
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            background: rgba(255, 255, 255, 0.03);
-            padding: 14px;
-        }
-
-        .status h3 {
-            font-size: 1rem;
+        h1 {
+            font-size: 28px;
+            color: #333;
             margin-bottom: 8px;
         }
 
-        .status p {
-            color: var(--muted);
-            font-size: 0.88rem;
-            line-height: 1.5;
-            margin: 0;
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
         }
 
-        .meter {
-            height: 8px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.14);
-            margin: 11px 0;
-            overflow: hidden;
+        .packages {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
-        .meter > span {
-            display: block;
-            height: 100%;
-            width: 12%;
-            background: linear-gradient(90deg, var(--brand-2), var(--brand));
-            transition: width 180ms ease;
-        }
-
-        .hint {
-            margin-top: 10px;
-            padding: 9px 11px;
+        .package {
+            border: 2px solid #eee;
             border-radius: 12px;
-            font-size: 0.84rem;
-            line-height: 1.45;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f9f9f9;
         }
 
-        .hint.ok {
-            color: #d8ffea;
-            border: 1px solid rgba(109, 228, 157, 0.3);
-            background: rgba(109, 228, 157, 0.12);
+        .package:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+            transform: translateY(-4px);
         }
 
-        .hint.warn {
-            color: #fff8dc;
-            border: 1px solid rgba(255, 223, 109, 0.35);
-            background: rgba(255, 223, 109, 0.12);
+        .package.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
         }
 
-        .helper {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+        .package.full {
+            grid-column: 1 / -1;
+        }
+
+        .package-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .package-price {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .package-duration {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
             margin-top: 10px;
-            font-size: 0.82rem;
-            color: var(--muted);
         }
 
-        .helper a {
-            color: #dde9ff;
-            text-decoration: none;
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
         }
 
-        .mobile-cta {
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
             display: none;
         }
 
-        @media (max-width: 980px) {
-            .wrap {
-                grid-template-columns: 1fr;
-            }
-            .plans {
-                grid-template-columns: 1fr;
-            }
-            .usage-row {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
+        .message.error {
+            background: #fee;
+            color: #c00;
+            display: block;
         }
 
-        @media (max-width: 640px) {
-            body {
-                padding: 10px;
-            }
-            .left, .right {
-                padding: 14px;
-            }
-            .btn-row, .tabs {
-                grid-template-columns: 1fr;
-            }
-            .mobile-cta {
-                display: block;
-                position: sticky;
-                bottom: 10px;
-                margin-top: 12px;
-                border: 1px solid var(--line);
-                border-radius: 14px;
-                background: rgba(13, 19, 35, 0.95);
-                padding: 10px;
-                backdrop-filter: blur(8px);
-            }
-            .mobile-cta .btn {
-                width: 100%;
-            }
+        .message.success {
+            background: #efe;
+            color: #060;
+            display: block;
+        }
+
+        .message.info {
+            background: #eef;
+            color: #006;
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 16px;
+            line-height: 1.6;
         }
     </style>
 </head>
 <body>
-    <div class="wrap">
-        <section class="card left">
-            <div class="brand">
-                <div class="logo">HS</div>
-                <div>
-                    <h1>Connect to Hostel WiFi</h1>
-                    <p class="sub">Pick your usage style, choose a package, then login to connect.</p>
+    <div class="container">
+        <div class="header">
+            <div class="logo">WiFi</div>
+            <h1>Apperstar Hotspot</h1>
+            <div class="subtitle">Fast, Affordable Internet</div>
+        </div>
+
+        <form id="paymentForm">
+            <div class="form-group">
+                <label for="phone">📱 Phone Number</label>
+                <input 
+                    type="tel" 
+                    id="phone" 
+                    name="phone" 
+                    placeholder="254712345678"
+                    pattern="^254[0-9]{9}$"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>📦 Select Package</label>
+                <div class="packages">
+                    <!-- Trial Package -->
+                    <div class="package full active" data-package='{"plan":"Trial","price":0,"duration":"10 minutes","system":"trial"}'>
+                        <div class="package-name">🎁 Free Trial</div>
+                        <div class="package-price">FREE</div>
+                        <div class="package-duration">10 minutes (one time only)</div>
+                    </div>
+
+                    <!-- Paid Packages -->
+                    <div class="package" data-package='{"plan":"1 Hour","price":50,"duration":"1 hour","system":"1h"}'>
+                        <div class="package-name">1 Hour</div>
+                        <div class="package-price">KES 50</div>
+                    </div>
+
+                    <div class="package" data-package='{"plan":"3 Hours","price":120,"duration":"3 hours","system":"3h"}'>
+                        <div class="package-name">3 Hours</div>
+                        <div class="package-price">KES 120</div>
+                    </div>
+
+                    <div class="package" data-package='{"plan":"12 Hours","price":250,"duration":"12 hours","system":"12h"}'>
+                        <div class="package-name">12 Hours</div>
+                        <div class="package-price">KES 250</div>
+                    </div>
+
+                    <div class="package" data-package='{"plan":"1 Day","price":300,"duration":"1 day","system":"1d"}'>
+                        <div class="package-name">1 Day</div>
+                        <div class="package-price">KES 300</div>
+                    </div>
+
+                    <div class="package" data-package='{"plan":"1 Week","price":1500,"duration":"1 week","system":"7d"}'>
+                        <div class="package-name">1 Week</div>
+                        <div class="package-price">KES 1,500</div>
+                    </div>
+
+                    <div class="package" data-package='{"plan":"1 Month","price":4500,"duration":"1 month","system":"30d"}'>
+                        <div class="package-name">1 Month</div>
+                        <div class="package-price">KES 4,500</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="usage-head">
-                <h2 style="font-size: 1.04rem;">How will you use internet today?</h2>
-                <p style="color: var(--muted); font-size: 0.84rem;">Auto recommendation enabled</p>
+            <button type="submit" id="submitBtn">Connect Now</button>
+            <div id="message" class="message"></div>
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px; color: #666;">Processing...</p>
             </div>
 
-            <div class="usage-row" id="usageRow">
-                <button class="usage-btn active" type="button" data-usage="quick">Quick Tasks</button>
-                <button class="usage-btn" type="button" data-usage="study">Study and Work</button>
-                <button class="usage-btn" type="button" data-usage="social">Social and Video</button>
-                <button class="usage-btn" type="button" data-usage="heavy">Heavy Streaming</button>
+            <div class="info-text">
+                💡 <strong>Trial:</strong> Use once per phone number. Paid packages renew daily.
             </div>
-
-            <div class="plans" id="plans">
-                <button class="plan" type="button" data-plan="Trial 10 Minutes" data-system="TEST-10M" data-price="0" data-duration="10 mins" data-usage="quick" data-note="Try hotspot before buying">
-                    <div>
-                        <div class="plan-title">Trial 10 Minutes</div>
-                        <div class="plan-note">Free test access then return to packages.</div>
-                    </div>
-                    <span class="price free">Free</span>
-                </button>
-                <button class="plan" type="button" data-plan="1 Hour Package" data-system="1H" data-price="10" data-duration="1 hour" data-usage="quick" data-note="Fast, low cost option">
-                    <div>
-                        <div class="plan-title">1 Hour Package</div>
-                        <div class="plan-note">Best for quick tasks and browsing.</div>
-                    </div>
-                    <span class="price">10 shs</span>
-                </button>
-                <button class="plan" type="button" data-plan="4 Hours Package" data-system="4H" data-price="20" data-duration="4 hours" data-usage="study" data-note="Stable for classes and assignments">
-                    <div>
-                        <div class="plan-title">4 Hours Package</div>
-                        <div class="plan-note">Good for research and coursework.</div>
-                    </div>
-                    <span class="price">20 shs</span>
-                </button>
-                <button class="plan" type="button" data-plan="8 Hours Package" data-system="8H" data-price="30" data-duration="8 hours" data-usage="study" data-note="Workday coverage">
-                    <div>
-                        <div class="plan-title">8 Hours Package</div>
-                        <div class="plan-note">Strong value for full-day use.</div>
-                    </div>
-                    <span class="price">30 shs</span>
-                </button>
-                <button class="plan" type="button" data-plan="12 Hours Package" data-system="12H" data-price="40" data-duration="12 hours" data-usage="social" data-note="Long session option">
-                    <div>
-                        <div class="plan-title">12 Hours Package</div>
-                        <div class="plan-note">Great for video classes and media.</div>
-                    </div>
-                    <span class="price">40 shs</span>
-                </button>
-                <button class="plan" type="button" data-plan="Daily Package" data-system="Daily" data-price="100" data-duration="1 day" data-usage="social" data-note="All-day internet access">
-                    <div>
-                        <div class="plan-title">Daily Package</div>
-                        <div class="plan-note">Single payment for full day use.</div>
-                    </div>
-                    <span class="price">100 shs</span>
-                </button>
-                <button class="plan" type="button" data-plan="Weekly Package" data-system="Weekly" data-price="500" data-duration="7 days" data-usage="heavy" data-note="Reliable for regular users">
-                    <div>
-                        <div class="plan-title">Weekly Package</div>
-                        <div class="plan-note">Practical for repeat daily usage.</div>
-                    </div>
-                    <span class="price">500 shs</span>
-                </button>
-                <button class="plan" type="button" data-plan="Monthly Package" data-system="Monthly" data-price="1500" data-duration="30 days" data-usage="heavy" data-note="Best for long stay users">
-                    <div>
-                        <div class="plan-title">Monthly Package</div>
-                        <div class="plan-note">Lowest cost over long duration.</div>
-                    </div>
-                    <span class="price">1500 shs</span>
-                </button>
-            </div>
-        </section>
-
-        <aside class="card right">
-            <div class="tabs">
-                <button class="tab active" type="button" data-tab="login">Login</button>
-                <button class="tab" type="button" data-tab="info">Info</button>
-            </div>
-
-            <div class="pane active" id="loginPane">
-                <form method="post" action="https://network.apperstar.dev/system/hotspot-payment-api.php" id="paymentForm">
-                    <input type="hidden" name="package" id="selectedPackage" value="">
-                    <input type="hidden" name="device_mac" value="$(mac-esc)">
-                    <input type="hidden" name="device_ip" value="$(ip)">
-                    <input type="hidden" name="router" value="$(identity)">
-                    <input type="hidden" name="redirect_url" value="$(link-orig-url)">
-
-                    <div class="field">
-                        <label for="phone">Phone Number (for M-Pesa)</label>
-                        <input type="tel" id="phone" name="phone" placeholder="254712345678" pattern="^254[0-9]{9}$" required autofocus>
-                    </div>
-
-                    <div class="field">
-                        <label id="packageLabel">Selected Package: <strong id="packageDisplay">Trial 10 Minutes</strong></label>
-                    </div>
-
-                    <div class="btn-row">
-                        <button type="button" class="btn alt" id="backToInfo">Back</button>
-                        <button type="submit" class="btn main" id="payBtn">Pay & Connect</button>
-                    </div>
-                </form>
-
-                <div style="margin-top: 15px; padding: 10px; background: rgba(93, 226, 204, 0.1); border-left: 3px solid #5de2cc; border-radius: 4px;">
-                    <p style="font-size: 0.85rem; color: var(--muted); margin: 0;">💡 <strong>Trial:</strong> 10 minutes free. After expiry, use your phone number to purchase a package.</p>
-                </div>
-            </div>
-
-            <div class="pane" id="infoPane">
-                <section class="status">
-                    <h3>Your Selected Plan</h3>
-                    <p id="selectedText">Trial 10 Minutes selected (system: TEST-10M). Good for testing before purchase.</p>
-                    <div class="meter"><span id="meterBar"></span></div>
-                    <p id="suggestionText">Usage profile: Quick Tasks. You can change anytime before continue.</p>
-                    <div class="hint ok" id="hintBox">This account will be limited to one active device at a time.</div>
-                </section>
-
-                <section class="status" style="margin-top: 12px;">
-                    <h3>Network Info</h3>
-                    <p>Your IP: $(ip)</p>
-                    <p>MAC Address: $(mac)</p>
-                    <p>Router: $(identity)</p>
-                </section>
-
-                <div class="helper">
-                    <a href="mailto:info@apperstar.dev">Support: info@apperstar.dev</a>
-                </div>
-
-                <div class="btn-row">
-                    <button type="button" class="btn alt" style="visibility: hidden;"></button>
-                    <button type="button" class="btn main" id="goToLogin">Continue to Login</button>
-                </div>
-            </div>
-
-            <div class="mobile-cta">
-                <button class="btn main" type="button" id="mobileContinue">Continue to Login</button>
-            </div>
-        </aside>
+        </form>
     </div>
 
     <script>
-        (function() {
-            const usageButtons = document.querySelectorAll(".usage-btn");
-            const planButtons = document.querySelectorAll(".plan");
-            const tabs = document.querySelectorAll(".tab");
-            const loginPane = document.getElementById("loginPane");
-            const infoPane = document.getElementById("infoPane");
+        let selectedPackage = JSON.parse('{"plan":"Trial","price":0,"duration":"10 minutes","system":"trial"}');
 
-            const selectedText = document.getElementById("selectedText");
-            const suggestionText = document.getElementById("suggestionText");
-            const meterBar = document.getElementById("meterBar");
-            const hintBox = document.getElementById("hintBox");
+        // Package selection
+        document.querySelectorAll('.package').forEach(pkg => {
+            pkg.addEventListener('click', function() {
+                document.querySelectorAll('.package').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                selectedPackage = JSON.parse(this.dataset.package);
+            });
+        });
 
-            const backToInfo = document.getElementById("backToInfo");
-            const goToLogin = document.getElementById("goToLogin");
-            const mobileContinue = document.getElementById("mobileContinue");
-            const paymentForm = document.getElementById("paymentForm");
-            const selectedPackageInput = document.getElementById("selectedPackage");
-            const packageDisplay = document.getElementById("packageDisplay");
+        // Form submission
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-            const usageMap = {
-                quick: { label: "Quick Tasks", meter: "20%", recommendation: "Trial 10 Minutes and 1 Hour Package are best for quick sessions." },
-                study: { label: "Study and Work", meter: "45%", recommendation: "4 Hours Package or 8 Hours Package gives stable work coverage." },
-                social: { label: "Social and Video", meter: "65%", recommendation: "12 Hours Package or Daily Package fits heavier daytime use." },
-                heavy: { label: "Heavy Streaming", meter: "88%", recommendation: "Weekly Package or Monthly Package is the best value." }
-            };
+            const phone = document.getElementById('phone').value;
+            const btn = document.getElementById('submitBtn');
+            const msg = document.getElementById('message');
+            const loading = document.getElementById('loading');
 
-            let activeUsage = "quick";
-            let selectedPlanData = null;
-
-            function activateTab(tabName) {
-                tabs.forEach(tab => tab.classList.toggle("active", tab.dataset.tab === tabName));
-                loginPane.classList.toggle("active", tabName === "login");
-                infoPane.classList.toggle("active", tabName === "info");
-                
-                // Update form field when switching to login tab
-                if (tabName === "login" && selectedPlanData) {
-                    selectedPackageInput.value = JSON.stringify(selectedPlanData);
-                    packageDisplay.textContent = selectedPlanData.plan;
-                }
+            if (!phone || !selectedPackage) {
+                showMessage('Please select a package', 'error');
+                return;
             }
 
-            function pickUsage(usageType) {
-                activeUsage = usageType;
-                usageButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.usage === usageType));
-                planButtons.forEach(plan => {
-                    plan.classList.remove("recommended");
-                    if (plan.dataset.usage === usageType) {
-                        plan.classList.add("recommended");
-                    }
+            btn.disabled = true;
+            loading.style.display = 'block';
+            msg.style.display = 'none';
+
+            try {
+                const response = await fetch('https://network.apperstar.dev/system/hotspot-payment-api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `phone=${encodeURIComponent(phone)}&package=${encodeURIComponent(JSON.stringify(selectedPackage))}&device_mac=$(mac-esc)&device_ip=$(ip)&router=$(identity)`
                 });
-                const info = usageMap[usageType];
-                meterBar.style.width = info.meter;
-                suggestionText.textContent = "Usage profile: " + info.label + ". " + info.recommendation;
-            }
 
-            function selectPlan(planButton) {
-                planButtons.forEach(plan => plan.classList.remove("active"));
-                planButton.classList.add("active");
-                
-                selectedPlanData = {
-                    plan: planButton.dataset.plan,
-                    system: planButton.dataset.system,
-                    price: planButton.dataset.price,
-                    duration: planButton.dataset.duration,
-                    note: planButton.dataset.note
-                };
-                
-                const planName = selectedPlanData.plan;
-                const price = selectedPlanData.price;
-                const duration = selectedPlanData.duration;
-                const note = selectedPlanData.note;
-                
-                selectedText.textContent = planName + " selected. Duration: " + duration + ". Price: " + (price === "0" ? "Free" : price + " shs") + ".";
-                if (price === "0") {
-                    hintBox.className = "hint warn";
-                    hintBox.textContent = "Trial is temporary. After expiry, reconnect and buy a paid package.";
-                } else {
-                    hintBox.className = "hint ok";
-                    hintBox.textContent = note + ". One device at a time.";
-                }
-                
-                packageDisplay.textContent = planName;
-                activateTab("info");
-            }
+                const result = await response.json();
+                loading.style.display = 'none';
 
-            usageButtons.forEach(button => {
-                button.addEventListener("click", function() {
-                    pickUsage(this.dataset.usage);
-                });
-            });
-
-            planButtons.forEach(plan => {
-                plan.addEventListener("click", function() {
-                    selectPlan(this);
-                });
-            });
-
-            tabs.forEach(tab => {
-                tab.addEventListener("click", function() {
-                    activateTab(this.dataset.tab);
-                });
-            });
-
-            backToInfo.addEventListener("click", function() {
-                activateTab("info");
-            });
-
-            goToLogin.addEventListener("click", function() {
-                activateTab("login");
-                document.getElementById("phone").focus();
-            });
-
-            mobileContinue.addEventListener("click", function() {
-                activateTab("login");
-                document.getElementById("phone").focus();
-            });
-
-            // Handle form submission for M-Pesa Daraja
-            paymentForm.addEventListener("submit", async function(e) {
-                e.preventDefault();
-                const phone = document.getElementById("phone").value;
-                if (!phone || !selectedPlanData) {
-                    alert("Please enter phone number and select a package");
-                    return;
-                }
-                
-                const payBtn = document.getElementById("payBtn");
-                payBtn.textContent = "Processing...";
-                payBtn.disabled = true;
-
-                try {
-                    const formData = new FormData(this);
+                if (result.status === 'success') {
+                    document.cookie = `hotspot_user=${result.username}; path=/`;
+                    document.cookie = `hotspot_session=${result.session_id}; path=/`;
                     
-                    const response = await fetch(this.action, {
-                        method: "POST",
-                        body: formData,
-                        mode: 'cors',
-                        credentials: 'include'
-                    });
+                    showMessage('✓ Connected! Redirecting...', 'success');
                     
-                    let result;
-                    try {
-                        result = await response.json();
-                    } catch (parseError) {
-                        // If response is not JSON, log what we got
-                        const text = await response.text();
-                        console.error('Response text:', text, 'Status:', response.status);
-                        throw new Error(`Server error (${response.status}): ${text.substring(0, 200)}`);
-                    }
-                    
-                    if (result.status === "success") {
-                        if (result.type === "trial" || result.type === "existing") {
-                            payBtn.textContent = "Logging you in...";
-                            
-                            // Set cookies to track user
-                            document.cookie = `hotspot_user=${result.username}; path=/; max-age=${86400}`;
-                            document.cookie = `hotspot_session=${result.session_id}; path=/; max-age=${86400}`;
-                            
-                            // Auto-login to MikroTik with the credentials
-                            const mtForm = document.createElement('form');
-                            mtForm.method = 'post';
-                            mtForm.action = '$(link-login-only)';
-                            mtForm.style.display = 'none';
-                            
-                            const userInput = document.createElement('input');
-                            userInput.type = 'hidden';
-                            userInput.name = 'username';
-                            userInput.value = result.username;
-                            
-                            const passInput = document.createElement('input');
-                            passInput.type = 'hidden';
-                            passInput.name = 'password';
-                            passInput.value = result.password;
-                            
-                            const dstInput = document.createElement('input');
-                            dstInput.type = 'hidden';
-                            dstInput.name = 'dst';
-                            dstInput.value = '$(link-orig)';
-                            
-                            mtForm.appendChild(userInput);
-                            mtForm.appendChild(passInput);
-                            mtForm.appendChild(dstInput);
-                            document.body.appendChild(mtForm);
-                            mtForm.submit();
-                        } else {
-                            // It's a payment prompt
-                            payBtn.textContent = "Check your phone!";
-                            alert("M-Pesa STK Push sent! Please enter your M-Pesa PIN on your phone to complete payment. Once you receive the SMS confirmation from Safaricom, refresh this page or visit the dashboard.");
-                            activateTab("login");
-                        }
+                    if (selectedPackage.price === 0) {
+                        // Trial - redirect to dashboard
+                        setTimeout(() => {
+                            window.location.href = '/hotspot/dashboard.html?trial=true';
+                        }, 1000);
                     } else {
-                        alert("Error: " + (result.message || "Unknown error"));
-                        payBtn.textContent = "Pay & Connect";
-                        payBtn.disabled = false;
+                        // Paid - auto-login to MikroTik
+                        const form = document.createElement('form');
+                        form.method = 'post';
+                        form.action = '$(link-login-only)';
+                        
+                        const user = document.createElement('input');
+                        user.type = 'hidden';
+                        user.name = 'username';
+                        user.value = result.username;
+                        
+                        const pass = document.createElement('input');
+                        pass.type = 'hidden';
+                        pass.name = 'password';
+                        pass.value = result.password;
+                        
+                        const dst = document.createElement('input');
+                        dst.type = 'hidden';
+                        dst.name = 'dst';
+                        dst.value = '$(link-orig)';
+                        
+                        form.appendChild(user);
+                        form.appendChild(pass);
+                        form.appendChild(dst);
+                        document.body.appendChild(form);
+                        form.submit();
                     }
-                } catch (error) {
-                    console.error('Fetch error:', error);
-                    alert("Connection error: " + error.message + "\n\nMake sure you are connected to the Hotspot and try again.");
-                    payBtn.textContent = "Pay & Connect";
-                    payBtn.disabled = false;
+                } else {
+                    showMessage('Error: ' + result.message, 'error');
+                    btn.disabled = false;
                 }
-            });
+            } catch (error) {
+                loading.style.display = 'none';
+                showMessage('Connection error. Try again.', 'error');
+                btn.disabled = false;
+            }
+        });
 
-            pickUsage("quick");
-            selectPlan(planButtons[0]);
-        })();
-    </script>
-</body>
-</html>
-        })();
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + type;
+        }
     </script>
 </body>
 </html>

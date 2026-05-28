@@ -84,6 +84,21 @@ try {
     // TRIAL PACKAGE - NO PAYMENT REQUIRED
     // ============================================
     if ($price === 0) {
+        // Check if user already used trial
+        $trialUsed = ORM::for_table('hotspot_trial_sessions')
+            ->where('phone', $phone)
+            ->find_one();
+        
+        if ($trialUsed) {
+            http_response_code(400);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Trial already used for this phone number. Please buy a package.',
+                'type' => 'trial'
+            ]);
+            exit;
+        }
+        
         $response = handleTrialPackage($phone, $plan, $deviceMac, $deviceIp, $duration, $system);
         echo json_encode($response);
         exit;
@@ -204,6 +219,16 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
         $session->created_at = date('Y-m-d H:i:s');
         $session->expires_at = date('Y-m-d H:i:s', $expiryTime);
         $session->save();
+        
+        // Record trial usage - once per phone number, never again
+        $trialRecord = ORM::for_table('hotspot_trial_sessions')->create();
+        $trialRecord->phone = $phone;
+        $trialRecord->username = $trialUser;
+        $trialRecord->trial_count = 1;
+        $trialRecord->total_trial_minutes = $durationMinutes;
+        $trialRecord->first_trial_at = date('Y-m-d H:i:s');
+        $trialRecord->last_trial_at = date('Y-m-d H:i:s');
+        $trialRecord->save();
         
         // Set browser cookie to track this user
         setcookie('hotspot_user', $trialUser, $expiryTime, '/', '', false, false);
