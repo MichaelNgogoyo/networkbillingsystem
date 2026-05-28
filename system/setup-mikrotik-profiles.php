@@ -22,27 +22,11 @@ $response = [
 try {
     error_log('Starting MikroTik profile setup...');
     
-    // Connect to MikroTik
+    // Use hardcoded router values (known setup)
     $routerIp = '192.168.88.1';
     $routerPort = 8728;
     $routerUser = 'admin';
     $routerPass = '1234';
-    
-    // Try to get router config from database (optional, use hardcoded values as fallback)
-    try {
-        $router = ORM::for_table('tbl_routers')->where('ip_port', '%192.168.88.1%')->find_one();
-        if ($router) {
-            $ipPort = $router['ip_port'] ?? '192.168.88.1:8728';
-            $parts = explode(':', $ipPort);
-            $routerIp = $parts[0];
-            $routerPort = isset($parts[1]) ? $parts[1] : 8728;
-            $routerUser = $router['username'] ?? 'admin';
-            $routerPass = $router['password'] ?? '1234';
-            error_log('Using router from DB: ' . $routerIp . ':' . $routerPort);
-        }
-    } catch (Exception $e) {
-        error_log('Could not load router from DB, using hardcoded values: ' . $e->getMessage());
-    }
     
     error_log('Connecting to MikroTik at ' . $routerIp . ':' . $routerPort);
     $client = Mikrotik::getClient($routerIp . ':' . $routerPort, $routerUser, $routerPass);
