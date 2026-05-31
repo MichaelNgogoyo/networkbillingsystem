@@ -324,42 +324,20 @@ function selectPackage() {
     $username = strtolower($packageKey) . '_' . $shortPhone . '_' . time();
     $password = bin2hex(random_bytes(6)); // Random 12-char password
 
-    // Create user in MikroTik via API (with timeout)
+    // Note: MikroTik user creation must happen on the router itself
+    // We return credentials here and they can be used when the user logs in
     $mikrotikSuccess = false;
-    try {
-        require_once __DIR__ . '/autoload/Mikrotik.php';
-        
-        // Set a 5-second timeout for connection attempts
-        $originalTimeout = ini_get('default_socket_timeout');
-        ini_set('default_socket_timeout', 5);
-        
-        $client = @Mikrotik::getClient('192.168.88.1', 'admin', '1234');
-        
-        if ($client) {
-            // Create hotspot user with profile
-            Mikrotik::addHotspotUser($client, $mikrotikProfile, [
-                'name' => $username,
-                'password' => $password,
-                'profile' => $mikrotikProfile
-            ]);
-
-            // Server-side login
-            Mikrotik::logMeIn($client, $username, $password, $_POST['device_ip'] ?? '0.0.0.0', $_POST['device_mac'] ?? '00:00:00:00:00:00');
-            
-            $client->disconnect();
-            $mikrotikSuccess = true;
-        }
-        
-        ini_set('default_socket_timeout', $originalTimeout);
-    } catch (Exception $e) {
-        ini_set('default_socket_timeout', $originalTimeout ?? ini_get('default_socket_timeout'));
-        error_log('[hotspot-login] MikroTik error: ' . $e->getMessage());
-    }
+    
+    // Since API server cannot reach MikroTik router (different networks),
+    // we'll rely on the router's hotspot login to trigger user creation
+    // via webhooks or a separate sync process
+    error_log('[hotspot-login] User credentials generated for ' . $username . ' - to be synced to MikroTik');
 
     // Record session
     $guestSession = ORM::for_table('hotspot_guest_sessions')->create();
     $guestSession->phone = $phone;
     $guestSession->username = $username;
+    $guestSession->password = $password; // Store the password so sync script can use it
     $guestSession->access_type = $isTrial ? 'trial' : 'paid';
     $guestSession->mac_address = $_POST['device_mac'] ?? '';
     $guestSession->device_ip = $_POST['device_ip'] ?? '';
