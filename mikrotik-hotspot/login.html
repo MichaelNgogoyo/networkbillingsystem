@@ -658,23 +658,48 @@
                 if (result.status === 'success') {
                     showMessage(msg, '✓ ' + result.message, 'success');
                     
-                    // Show credentials in a separate section
-                    if (result.username && result.password) {
+                    // Show username and credentials
+                    if (result.username) {
                         setTimeout(() => {
                             const credSection = document.createElement('div');
-                            credSection.style.cssText = 'background:#f0f0f0; padding:15px; border-radius:8px; margin-top:10px; text-align:left; font-family:monospace; font-size:12px;';
-                            credSection.innerHTML = '<strong>Your WiFi Credentials:</strong><br>' +
-                                'Username: <code style="background:white; padding:5px; border-radius:4px;">' + escapeHtml(result.username) + '</code><br>' +
-                                'Password: <code style="background:white; padding:5px; border-radius:4px;">' + escapeHtml(result.password) + '</code><br><br>' +
-                                '<small>Use these to log in to the WiFi portal.</small>';
+                            credSection.style.cssText = 'background:#f0f0f0; padding:15px; border-radius:8px; margin-top:10px; text-align:left; font-family:monospace; font-size:13px;';
+                            credSection.id = 'cred-section-' + result.username;
+                            let credHtml = '<strong style="display:block; margin-bottom:10px;">Your WiFi Credentials:</strong>';
+                            credHtml += 'Username: <code style="background:white; padding:5px; border-radius:4px; display:block; margin-bottom:8px;">' + escapeHtml(result.username) + '</code>';
+                            
+                            if (result.password) {
+                                credHtml += 'Password: <code style="background:white; padding:5px; border-radius:4px; display:block; margin-bottom:8px;">' + escapeHtml(result.password) + '</code>';
+                                credHtml += '<small style="display:block; margin-top:10px; color:#666;">✅ Use these credentials to log in to the WiFi hotspot.<br/>Open Settings → WiFi → Select this network → Enter username and password above.</small>';
+                            } else if (result.sync_pending) {
+                                credHtml += '<small style="display:block; margin-top:10px; color:#1e88e5; font-weight:bold;">⏳ Password is being prepared (1-2 minutes)</small>';
+                                credHtml += '<button type="button" id="btn-refresh-' + escapeHtml(result.username) + '" style="margin-top:10px; padding:10px 15px; background:#1e88e5; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Refresh to Get Password</button>';
+                                credHtml += '<small id="auto-refresh-' + escapeHtml(result.username) + '" style="display:block; margin-top:8px; color:#999;">Auto-refreshing in 30 seconds...</small>';
+                            }
+                            
+                            credSection.innerHTML = credHtml;
                             msg.parentNode.insertBefore(credSection, msg.nextSibling);
-                        }, 200);
+                            
+                            // Setup auto-refresh if password is pending
+                            if (result.sync_pending) {
+                                const btn = document.getElementById('btn-refresh-' + escapeHtml(result.username));
+                                const statusEl = document.getElementById('auto-refresh-' + escapeHtml(result.username));
+                                
+                                // Manual refresh button
+                                btn.addEventListener('click', () => {
+                                    location.reload();
+                                });
+                                
+                                // Auto-refresh after 30 seconds
+                                setTimeout(() => {
+                                    statusEl.textContent = 'Refreshing...';
+                                    location.reload();
+                                }, 30000);
+                            }
+                        }, 300);
                     }
                     
-                    // Redirect to status page after delay
-                    setTimeout(() => {
-                        window.location.href = '/status.html';
-                    }, 3000);
+                    // Do NOT redirect - let user see and use credentials
+                    // Remove: window.location.href = '/status.html';
                 } else {
                     showMessage(msg, '❌ ' + result.message, 'error');
                     btn.disabled = false;

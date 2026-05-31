@@ -107,8 +107,27 @@ foreach ($recentSessions as $session) {
     
     $profile = $profileMap[$profile] ?? $profile;
     
-    // Get the password from our database
+    // Get the password from our database, or generate one if it doesn't exist
     $password = $session['password'];
+    if (empty($password) || is_null($password)) {
+        // Generate a random 12-character password if one doesn't exist
+        $password = bin2hex(random_bytes(6));
+        echo "[" . date('Y-m-d H:i:s') . "] Generated password for $username: $password\n";
+        
+        // Save the generated password back to the database for reference using ORM
+        try {
+            $guestSession = ORM::for_table('hotspot_guest_sessions')
+                ->where('username', $username)
+                ->find_one();
+            if ($guestSession) {
+                $guestSession->password = $password;
+                $guestSession->save();
+            }
+        } catch (Exception $e) {
+            // If we can't save it, that's ok - we'll still use it for MikroTik
+            echo "[" . date('Y-m-d H:i:s') . "] Warning: Could not save password to database for $username\n";
+        }
+    }
     
     // SSH command to create user on MikroTik
     $sshCommand = sprintf(
