@@ -5,9 +5,66 @@
  * Based on entries in the hotspot_guest_sessions table
  */
 
-// Initialize application
-set_include_path(dirname(__FILE__) . '/..:' . get_include_path());
-require_once __DIR__ . '/../init.php';
+// Manually setup database connection without going through init.php
+$baseDir = dirname(__FILE__) . '/..';
+chdir($baseDir);
+
+// CLI Mode - set up fake web environment to allow config.php to load
+if (!isset($_SERVER['HTTPS'])) {
+    $_SERVER['HTTPS'] = 'off';
+}
+if (!isset($_SERVER['HTTP_HOST'])) {
+    $_SERVER['HTTP_HOST'] = 'localhost';
+}
+if (!isset($_SERVER['SCRIPT_NAME'])) {
+    $_SERVER['SCRIPT_NAME'] = '/system/sync-to-mikrotik.php';
+}
+if (!isset($_SERVER['SERVER_PORT'])) {
+    $_SERVER['SERVER_PORT'] = 80;
+}
+
+// Load database config - try multiple locations
+$configFile = './config.php';
+if (!file_exists($configFile)) {
+    $configFile = './.runtime/config.php';
+}
+if (!file_exists($configFile)) {
+    die("Error: config.php not found in " . getcwd() . "\n");
+}
+require_once $configFile;
+
+// Load ORM
+if (!file_exists('./system/orm.php')) {
+    die("Error: orm.php not found\n");
+}
+require_once './system/orm.php';
+
+// Setup database connection manually
+ORM::configure("mysql:host={$db_host};dbname={$db_name}");
+ORM::configure('username', $db_user);
+ORM::configure('password', $db_pass);
+
+// CLI mode: if host is 'mysql' (Docker hostname), try to get the container IP
+if ($db_host === 'mysql' || $db_host === 'localhost') {
+    // Try to get MySQL container IP from Docker
+    $dockerOutput = shell_exec('docker inspect -f \'{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}\' mysql 2>/dev/null');
+    if (!empty($dockerOutput)) {
+        $mysqlIp = trim($dockerOutput);
+        if (!empty($mysqlIp)) {
+            ORM::configure("mysql:host={$mysqlIp};dbname={$db_name}");
+        }
+    }
+}
+
+// Test connection
+try {
+    $testQuery = ORM::for_table('hotspot_guest_sessions')->limit(1)->find_one();
+    // Connection successful
+} catch (Exception $e) {
+    die("Database connection error: " . $e->getMessage() . "\n");
+}
+
+// Now run the sync logic
 
 $MIKROTIK_HOST = '192.168.88.1';
 $MIKROTIK_USER = 'admin';
