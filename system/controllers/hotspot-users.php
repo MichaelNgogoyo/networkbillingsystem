@@ -2,7 +2,7 @@
 
 /**
  *  PHP Mikrotik Billing (https://github.com/hotspotbilling/phpnuxbill/)
- *  Hotspot Users Management
+ *  Hotspot Users Management - Using tbl_customers (RADIUS-based)
  **/
 
 _admin();
@@ -20,18 +20,20 @@ switch ($action) {
     case 'list':
         $search = _req('search');
         $order = _req('order', 'created_at');
-        $order_pos = ['id' => 'asc', 'created_at' => 'desc'];
+        $order_pos = ['id' => 'asc', 'created_at' => 'desc', 'username' => 'asc', 'phonenumber' => 'asc'];
 
         if (!array_key_exists($order, $order_pos)) {
             $order = 'created_at';
         }
 
-        $query = ORM::for_table('hotspot_users');
+        // Query tbl_customers filtered for Hotspot service type
+        $query = ORM::for_table('tbl_customers');
+        $query->where('service_type', 'Hotspot');
 
         if ($search) {
             $query->where_raw(
-                "(phone LIKE ? OR email LIKE ?)",
-                ["%$search%", "%$search%"]
+                "(username LIKE ? OR phonenumber LIKE ? OR fullname LIKE ? OR email LIKE ?)",
+                ["%$search%", "%$search%", "%$search%", "%$search%"]
             );
         }
 
@@ -53,27 +55,30 @@ switch ($action) {
 
     case 'view':
         $user_id = $routes['2'];
-        $user = ORM::for_table('hotspot_users')->find_one($user_id);
+        $user = ORM::for_table('tbl_customers')
+            ->where('id', $user_id)
+            ->where('service_type', 'Hotspot')
+            ->find_one();
 
         if (!$user) {
             r2(getUrl('hotspot-users'), 'e', Lang::T('User not found'));
         }
 
-        // Get user sessions
-        $sessions = ORM::for_table('hotspot_user_sessions')
-            ->where('user_id', $user_id)
-            ->order_by_desc('created_at')
+        // Get active plans from tbl_user_recharges
+        $recharges = ORM::for_table('tbl_user_recharges')
+            ->where('customer_id', $user_id)
+            ->order_by_desc('recharged_on')
             ->find_many();
 
-        // Get guest sessions
-        $guest_sessions = ORM::for_table('hotspot_guest_sessions')
-            ->where('phone', $user['phone'])
-            ->order_by_desc('created_at')
+        // Get MAC addresses that used trial (30-day tracking)
+        $macUsage = ORM::for_table('tbl_hotspot_mac_trial')
+            ->where('customer_id', $user_id)
+            ->order_by_desc('used_date')
             ->find_many();
 
         $ui->assign('user', $user);
-        $ui->assign('sessions', $sessions);
-        $ui->assign('guest_sessions', $guest_sessions);
+        $ui->assign('recharges', $recharges);
+        $ui->assign('macUsage', $macUsage);
         $ui->assign('csrf_token', Csrf::generateAndStoreToken());
         $ui->display('admin/hotspot-users/view.tpl');
         break;
@@ -90,18 +95,23 @@ switch ($action) {
             r2(getUrl('hotspot-users'), 'e', Lang::T('Invalid or Expired CSRF Token'));
         }
 
-        $user = ORM::for_table('hotspot_users')->find_one($user_id);
+        // Get customer from tbl_customers
+        $user = ORM::for_table('tbl_customers')
+            ->where('id', $user_id)
+            ->where('service_type', 'Hotspot')
+            ->find_one();
+
         if ($user) {
-            // Delete related sessions
-            ORM::for_table('hotspot_user_sessions')
-                ->where('user_id', $user_id)
+            // Delete all related records
+            ORM::for_table('tbl_user_recharges')
+                ->where('customer_id', $user_id)
                 ->delete_many();
 
-            ORM::for_table('hotspot_guest_sessions')
-                ->where('phone', $user['phone'])
+            ORM::for_table('tbl_hotspot_mac_trial')
+                ->where('customer_id', $user_id)
                 ->delete_many();
 
-            // Delete user
+            // Delete customer
             $user->delete();
 
             r2(getUrl('hotspot-users'), 's', Lang::T('User deleted successfully'));
@@ -110,7 +120,7 @@ switch ($action) {
         }
         break;
 
-    case 'reset-password':
+    case 'reset-trial':
         if (!in_array($admin['user_type'], ['SuperAdmin', 'Admin'])) {
             _alert(Lang::T('You do not have permission to access this page'), 'danger', "dashboard");
         }
@@ -122,13 +132,19 @@ switch ($action) {
             r2(getUrl('hotspot-users'), 'e', Lang::T('Invalid or Expired CSRF Token'));
         }
 
-        $user = ORM::for_table('hotspot_users')->find_one($user_id);
-        if ($user) {
-            // Clear trial usage
-            $user->trial_used = 0;
-            $user->save();
+        // Get customer from tbl_customers
+        $user = ORM::for_table('tbl_customers')
+            ->where('id', $user_id)
+            ->where('service_type', 'Hotspot')
+            ->find_one();
 
-            r2(getUrl('hotspot-users/view/' . $user_id), 's', Lang::T('Trial reset successfully'));
+        if ($user) {
+            // Clear MAC trial records (allow them to use trial again)
+            ORM::for_table('tbl_hotspot_mac_trial')
+                ->where('customer_id', $user_id)
+                ->delete_many();
+
+            r2(getUrl('hotspot-users/view/' . $user_id), 's', Lang::T('Trial reset. User can use trial again.'));
         } else {
             r2(getUrl('hotspot-users'), 'e', Lang::T('User not found'));
         }
@@ -138,3 +154,4 @@ switch ($action) {
         $ui->display('admin/404.tpl');
         break;
 }
+

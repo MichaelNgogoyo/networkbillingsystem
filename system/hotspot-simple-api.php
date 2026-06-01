@@ -1,8 +1,8 @@
 <?php
 /**
- * Simplified Hotspot Login API
- * Phone + 4-digit PIN authentication
- * Integrates directly with MikroTik profiles
+ * Hotspot Trial Registration & Authentication API
+ * Uses PHPNuxBill native tables: tbl_customers, tbl_user_recharges, tbl_hotspot_mac_trial
+ * Phone + 4-digit PIN authentication via RADIUS
  */
 
 // Initialize application
@@ -22,11 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $action = $_GET['action'] ?? $_POST['action'] ?? null;
 
 try {
-    // DEBUG ONLY - Remove this later
-    if ($action) {
-        error_log('[hotspot-api] Received action: [' . $action . '] type: ' . gettype($action) . ' length: ' . strlen($action));
-    }
-    
     switch ($action) {
         case 'check-phone':
             checkPhone();
@@ -37,11 +32,8 @@ try {
         case 'create-user':
             createNewUser();
             break;
-        case 'select-package':
-            selectPackage();
-            break;
-        case 'check-password':
-            checkPassword();
+        case 'check-trial-used':
+            checkMacTrialStatus();
             break;
         default:
             http_response_code(400);
@@ -56,6 +48,9 @@ try {
     ]);
 }
 
+/**
+ * Check if phone number exists in tbl_customers
+ */
 function checkPhone() {
     $phone = $_POST['phone'] ?? null;
 
@@ -75,9 +70,10 @@ function checkPhone() {
         exit;
     }
 
-    // Check if user exists
-    $user = ORM::for_table('hotspot_users')
-        ->where('phone', $phone)
+    // Check if user exists in tbl_customers (phone as username)
+    $user = ORM::for_table('tbl_customers')
+        ->where('username', $phone)
+        ->where('service_type', 'Hotspot')
         ->find_one();
 
     if ($user) {
@@ -89,7 +85,7 @@ function checkPhone() {
             'message' => 'Enter your 4-digit PIN'
         ]);
     } else {
-        // New user - can create account or try trial
+        // New user - can create account to get trial
         echo json_encode([
             'status' => 'success',
             'exists' => false,
@@ -99,6 +95,9 @@ function checkPhone() {
     }
 }
 
+/**
+ * Verify PIN against tbl_customers password
+ */
 function verifyPin() {
     $phone = $_POST['phone'] ?? null;
     $pin = $_POST['pin'] ?? null;
@@ -123,27 +122,28 @@ function verifyPin() {
         exit;
     }
 
-    // Find user
-    $user = ORM::for_table('hotspot_users')
-        ->where('phone', $phone)
+    // Find user in tbl_customers
+    $user = ORM::for_table('tbl_customers')
+        ->where('username', $phone)
+        ->where('service_type', 'Hotspot')
         ->find_one();
 
     if (!$user) {
         http_response_code(401);
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'User not found'
-        ]);
+        echo json_encode(['status' => 'error', 'message' => 'User not found']);
         exit;
     }
 
-    // Verify PIN
-    if (!password_verify($pin, $user->pin)) {
+    if ($user->status !== 'Active') {
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Account is not active']);
+        exit;
+    }
+
+    // Verify PIN (stored as bcrypt in password field)
+    if (!password_verify($pin, $user->password)) {
         http_response_code(401);
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'Invalid PIN'
-        ]);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid PIN']);
         exit;
     }
 
@@ -151,30 +151,24 @@ function verifyPin() {
     $user->last_login = date('Y-m-d H:i:s');
     $user->save();
 
-    // Create session
-    $sessionId = bin2hex(random_bytes(32));
-    $session = ORM::for_table('hotspot_user_sessions')->create();
-    $session->user_id = $user->id;
-    $session->phone = $phone;
-    $session->session_id = $sessionId;
-    $session->ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
-    $session->expires_at = date('Y-m-d H:i:s', strtotime('+24 hours'));
-    $session->save();
-
     http_response_code(200);
     echo json_encode([
         'status' => 'success',
-        'message' => 'PIN verified! Select a package.',
-        'user_id' => $user->id,
+        'message' => 'PIN verified! Credentials ready for MikroTik login.',
+        'customer_id' => $user->id,
         'phone' => $phone,
-        'session_id' => $sessionId,
-        'trial_used' => (bool)$user->trial_used
+        'username' => $user->username,
+        'password' => $user->password // PIN is stored as bcrypt, used directly for RADIUS
     ]);
 }
 
+/**
+ * Create new customer in tbl_customers and assign trial plan
+ */
 function createNewUser() {
     $phone = $_POST['phone'] ?? null;
     $pin = $_POST['pin'] ?? null;
+    $device_mac = $_POST['device_mac'] ?? null;
 
     if (!$phone || !$pin) {
         http_response_code(400);
@@ -202,9 +196,27 @@ function createNewUser() {
         exit;
     }
 
+    // Check if MAC has already used trial in last 30 days
+    if ($device_mac) {
+        $macTrial = ORM::for_table('tbl_hotspot_mac_trial')
+            ->where('mac_address', $device_mac)
+            ->where_gte('expires_date', date('Y-m-d H:i:s'))
+            ->find_one();
+
+        if ($macTrial) {
+            http_response_code(403);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'This device already used the trial. Try again after ' . $macTrial->expires_date
+            ]);
+            exit;
+        }
+    }
+
     // Check if phone already exists
-    $existingUser = ORM::for_table('hotspot_users')
-        ->where('phone', $phone)
+    $existingUser = ORM::for_table('tbl_customers')
+        ->where('username', $phone)
+        ->where('service_type', 'Hotspot')
         ->find_one();
 
     if ($existingUser) {
@@ -216,203 +228,128 @@ function createNewUser() {
         exit;
     }
 
-    // Create new user
-    $user = ORM::for_table('hotspot_users')->create();
-    $user->phone = $phone;
-    $user->pin = password_hash($pin, PASSWORD_BCRYPT);
-    $user->email = 'phone_' . $phone . '@hotspot.local'; // Default email for backward compat
-    $user->password = password_hash(bin2hex(random_bytes(8)), PASSWORD_BCRYPT); // Unused, for backward compat
-    $user->trial_used = 0;
-    $user->status = 'active';
-    $user->created_at = date('Y-m-d H:i:s');
-    $user->save();
+    // Create new customer in tbl_customers
+    $customer = ORM::for_table('tbl_customers')->create();
+    $customer->username = $phone;
+    $customer->password = password_hash($pin, PASSWORD_BCRYPT); // PIN stored as bcrypt
+    $customer->phonenumber = $phone;
+    $customer->fullname = 'Trial User ' . $phone;
+    $customer->email = 'trial_' . $phone . '@hotspot.local';
+    $customer->service_type = 'Hotspot';
+    $customer->account_type = 'Personal';
+    $customer->balance = 0;
+    $customer->status = 'Active';
+    $customer->created_by = 1; // System admin
+    $customer->created_at = date('Y-m-d H:i:s');
+    $customer->save();
 
-    // Create session
-    $sessionId = bin2hex(random_bytes(32));
-    $session = ORM::for_table('hotspot_user_sessions')->create();
-    $session->user_id = $user->id;
-    $session->phone = $phone;
-    $session->session_id = $sessionId;
-    $session->ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
-    $session->expires_at = date('Y-m-d H:i:s', strtotime('+24 hours'));
-    $session->save();
+    // Get trial plan (id=9999, created in migration)
+    $trialPlan = ORM::for_table('tbl_plans')
+        ->where('id', 9999)
+        ->find_one();
+
+    if (!$trialPlan) {
+        // Fallback: find first hotspot plan
+        $trialPlan = ORM::for_table('tbl_plans')
+            ->where('type', 'Hotspot')
+            ->find_one();
+    }
+
+    if (!$trialPlan) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Trial plan not configured']);
+        exit;
+    }
+
+    // Create entry in tbl_user_recharges to activate trial
+    $recharge = ORM::for_table('tbl_user_recharges')->create();
+    $recharge->customer_id = $customer->id;
+    $recharge->username = $phone;
+    $recharge->plan_id = $trialPlan->id;
+    $recharge->namebp = $trialPlan->name_plan;
+    $recharge->recharged_on = date('Y-m-d');
+    $recharge->recharged_time = date('H:i:s');
+    
+    // Calculate expiration based on plan validity
+    $expiryTime = strtotime('+' . $trialPlan->validity . ' ' . strtolower($trialPlan->validity_unit));
+    $recharge->expiration = date('Y-m-d', $expiryTime);
+    $recharge->time = date('H:i:s', $expiryTime);
+    
+    $recharge->status = 'on';
+    $recharge->method = 'Trial';
+    $recharge->routers = $trialPlan->routers;
+    $recharge->type = $trialPlan->type;
+    $recharge->admin_id = 1;
+    $recharge->save();
+
+    // Record MAC address if provided (30-day prevention)
+    if ($device_mac) {
+        $macEntry = ORM::for_table('tbl_hotspot_mac_trial')->create();
+        $macEntry->mac_address = $device_mac;
+        $macEntry->customer_id = $customer->id;
+        $macEntry->used_date = date('Y-m-d H:i:s');
+        $macEntry->expires_date = date('Y-m-d H:i:s', strtotime('+30 days'));
+        $macEntry->status = 'active';
+        $macEntry->save();
+    }
 
     http_response_code(201);
     echo json_encode([
         'status' => 'success',
-        'message' => '✓ Account created! Get your free 10-minute trial now.',
-        'user_id' => $user->id,
+        'message' => '✓ Account created! You can now login to WiFi.',
+        'customer_id' => $customer->id,
         'phone' => $phone,
-        'session_id' => $sessionId,
-        'grant_trial' => true
+        'username' => $customer->username,
+        'password' => $pin, // Return PIN (user will enter PIN on MikroTik hotspot)
+        'grant_trial' => true,
+        'trial_duration' => $trialPlan->time_limit . ' ' . $trialPlan->time_unit
     ]);
 }
 
-function selectPackage() {
-    $phone = $_POST['phone'] ?? null;
-    $packageName = $_POST['package'] ?? null;
-    $sessionId = $_POST['session_id'] ?? null;
+/**
+ * Check if MAC address can still use trial (not in 30-day cooldown)
+ */
+function checkMacTrialStatus() {
+    $device_mac = $_POST['device_mac'] ?? $_GET['device_mac'] ?? null;
 
-    if (!$phone || !$packageName || !$sessionId) {
+    if (!$device_mac) {
         http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
+        echo json_encode(['status' => 'error', 'message' => 'MAC address required']);
         exit;
     }
 
-    // Verify session exists
-    $session = ORM::for_table('hotspot_user_sessions')
-        ->where('session_id', $sessionId)
+    // Normalize MAC address format
+    $device_mac = strtoupper(str_replace('-', ':', $device_mac));
+
+    $macTrial = ORM::for_table('tbl_hotspot_mac_trial')
+        ->where('mac_address', $device_mac)
         ->find_one();
 
-    if (!$session || strtotime($session->expires_at) < time()) {
-        http_response_code(401);
-        echo json_encode(['status' => 'error', 'message' => 'Session expired']);
-        exit;
+    if (!$macTrial) {
+        // This MAC hasn't used trial yet
+        http_response_code(200);
+        echo json_encode([
+            'status' => 'success',
+            'can_use_trial' => true,
+            'message' => 'This device is eligible for trial'
+        ]);
+    } else if ($macTrial->status === 'expired' || strtotime($macTrial->expires_date) < time()) {
+        // Trial cooldown has expired
+        http_response_code(200);
+        echo json_encode([
+            'status' => 'success',
+            'can_use_trial' => true,
+            'message' => 'Trial cooldown period expired. You can use trial again.'
+        ]);
+    } else {
+        // Still in 30-day cooldown
+        http_response_code(200);
+        echo json_encode([
+            'status' => 'success',
+            'can_use_trial' => false,
+            'expires_date' => $macTrial->expires_date,
+            'message' => 'This device already used trial. Try again after ' . $macTrial->expires_date
+        ]);
     }
-
-    // Map package name to MikroTik profile
-    $profileMap = [
-        'trial' => 'TEST-10M',
-        'freetrial' => 'TEST-10M',
-        '1hour' => '1H',
-        '1h' => '1H',
-        '4hours' => '4H',
-        '4h' => '4H',
-        '8hours' => '8H',
-        '8h' => '8H',
-        '12hours' => '12H',
-        '12h' => '12H',
-        'daily' => 'Daily',
-        '1day' => 'Daily',
-        'weekly' => 'Weekly',
-        '1week' => 'Weekly',
-        'monthly' => 'Monthly',
-        '1month' => 'Monthly'
-    ];
-
-    $packageKey = strtolower(str_replace([' ', 'hours', 'hour', 'days', 'day', 'weeks', 'week', 'months', 'month'], '', $packageName));
-    if (!isset($profileMap[$packageKey])) {
-        http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Invalid package: ' . $packageKey]);
-        exit;
-    }
-
-    $mikrotikProfile = $profileMap[$packageKey];
-    
-    // Check if this is trial
-    $isTrial = in_array($packageKey, ['trial', 'freetrial']);
-    $user = ORM::for_table('hotspot_users')
-        ->where('phone', $phone)
-        ->find_one();
-
-    if (!$user) {
-        http_response_code(404);
-        echo json_encode(['status' => 'error', 'message' => 'User not found']);
-        exit;
-    }
-
-    if ($isTrial) {
-        // Check if trial already used
-        if ($user->trial_used) {
-            http_response_code(403);
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Trial already used! Please select a paid package or upgrade.'
-            ]);
-            exit;
-        }
-
-        // Mark trial as used
-        $user->trial_used = 1;
-        $user->save();
-    }
-
-    // Create MikroTik username (phone-based)
-    $shortPhone = substr($phone, -9); // Last 9 digits
-    $username = strtolower($packageKey) . '_' . $shortPhone . '_' . time();
-
-    // Note: MikroTik user creation and password generation happens in the sync script
-    // The sync script will:
-    // 1. Find this guest session record
-    // 2. Generate a password if not present
-    // 3. Create the user on MikroTik
-    // 4. Save the password back to database
-    
-    error_log('[hotspot-login] User credentials queued for sync to MikroTik: ' . $username);
-
-    // Record session WITHOUT password (sync script will add it)
-    try {
-        $guestSession = ORM::for_table('hotspot_guest_sessions')->create();
-        $guestSession->phone = $phone;
-        $guestSession->username = $username;
-        $guestSession->access_type = $isTrial ? 'trial' : 'paid';
-        $guestSession->mac_address = $_POST['device_mac'] ?? '';
-        $guestSession->device_ip = $_POST['device_ip'] ?? '';
-        $guestSession->plan = $packageName;
-        $guestSession->session_id = $sessionId;
-        $guestSession->status = 'active';
-        $guestSession->created_at = date('Y-m-d H:i:s');
-        $guestSession->save();
-        
-        error_log('[hotspot-login] Guest session queued for sync: ' . $username);
-        
-    } catch (Exception $e) {
-        error_log('[hotspot-login] ERROR saving guest session: ' . $e->getMessage());
-    }
-
-    http_response_code(200);
-    echo json_encode([
-        'status' => 'success',
-        'message' => '✓ Session created! Your credentials are being prepared...',
-        'username' => $username,
-        'password' => null, // Will be generated by sync script within 1-2 minutes
-        'profile' => $mikrotikProfile,
-        'is_trial' => $isTrial,
-        'mikrotik_ready' => false, // Synced by background script
-        'sync_pending' => true // Tell frontend to poll for updates
-    ]);
-    exit;
 }
 
-function checkPassword() {
-    $username = $_POST['username'] ?? null;
-    
-    if (!$username) {
-        http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Username required']);
-        exit;
-    }
-    
-    try {
-        $guestSession = ORM::for_table('hotspot_guest_sessions')
-            ->where('username', $username)
-            ->find_one();
-        
-        if (!$guestSession) {
-            http_response_code(404);
-            echo json_encode(['status' => 'error', 'message' => 'Session not found']);
-            exit;
-        }
-        
-        if ($guestSession->password) {
-            http_response_code(200);
-            echo json_encode([
-                'status' => 'ready',
-                'username' => $guestSession->username,
-                'password' => $guestSession->password,
-                'profile' => $guestSession->plan
-            ]);
-        } else {
-            http_response_code(202); // Accepted but not ready yet
-            echo json_encode([
-                'status' => 'pending',
-                'message' => 'Password is being generated. Please check again in 1-2 minutes.'
-            ]);
-        }
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
-    }
-    exit;
-}
-?>

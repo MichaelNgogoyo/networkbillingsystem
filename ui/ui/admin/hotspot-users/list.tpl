@@ -20,7 +20,7 @@
                         <div class="col-lg-4">
                             <div class="input-group">
                                 <span class="input-group-addon">{Lang::T('Search')} </span>
-                                <input type="text" name="search" class="form-control" value="{$search}" placeholder="{Lang::T('Phone or Email')}">
+                                <input type="text" name="search" class="form-control" value="{$search}" placeholder="{Lang::T('Phone, Name or Email')}">
                                 <span class="input-group-btn">
                                     <button class="btn btn-primary" type="submit"><span class="glyphicon glyphicon-search"></span></button>
                                 </span>
@@ -31,7 +31,7 @@
                                 <span class="input-group-addon">{Lang::T('Order')}</span>
                                 <select class="form-control" name="order" onchange="$('#site-search').submit()">
                                     <option value="created_at" {if $order eq 'created_at' }selected{/if}>{Lang::T('Created Date')}</option>
-                                    <option value="phone" {if $order eq 'phone' }selected{/if}>{Lang::T('Phone')}</option>
+                                    <option value="username" {if $order eq 'username' }selected{/if}>{Lang::T('Phone Number')}</option>
                                     <option value="id" {if $order eq 'id' }selected{/if}>{Lang::T('ID')}</option>
                                 </select>
                             </div>
@@ -45,10 +45,11 @@
                             <tr>
                                 <th style="width: 5%">ID</th>
                                 <th style="width: 15%">{Lang::T('Phone')}</th>
+                                <th style="width: 15%">{Lang::T('Name')}</th>
                                 <th style="width: 15%">{Lang::T('Email')}</th>
-                                <th style="width: 10%">{Lang::T('Trial Used')}</th>
+                                <th style="width: 15%">{Lang::T('Status')}</th>
                                 <th style="width: 15%">{Lang::T('Last Login')}</th>
-                                <th style="width: 15%">{Lang::T('Created')}</th>
+                                <th style="width: 10%">{Lang::T('Created')}</th>
                                 <th style="width: 25%">{Lang::T('Action')}</th>
                             </tr>
                         </thead>
@@ -57,14 +58,15 @@
                             <tr>
                                 <td>#{$user['id']}</td>
                                 <td>
-                                    <strong>{$user['phone']}</strong>
+                                    <strong>{$user['username']}</strong>
                                 </td>
+                                <td>{$user['fullname']|default:'-'}</td>
                                 <td>{$user['email']|default:'-'}</td>
                                 <td>
-                                    {if $user['trial_used'] == 1}
-                                    <span class="label label-danger">Yes</span>
+                                    {if $user['status'] eq 'Active'}
+                                    <span class="label label-success">{Lang::T('Active')}</span>
                                     {else}
-                                    <span class="label label-success">No</span>
+                                    <span class="label label-danger">{$user['status']}</span>
                                     {/if}
                                 </td>
                                 <td>{$user['last_login']|default:'-'}</td>
@@ -74,7 +76,7 @@
                                         <span class="glyphicon glyphicon-eye-open"></span> {Lang::T('View')}
                                     </a>
                                     {if in_array($_admin['user_type'],['SuperAdmin','Admin'])}
-                                    <a class="btn btn-warning btn-xs" title="reset" href="{Text::url('hotspot-users/reset-password/', $user['id'], '&token=', $csrf_token)}" onclick="return confirm('{Lang::T('Reset trial status')}?')">
+                                    <a class="btn btn-warning btn-xs" title="reset" href="{Text::url('hotspot-users/reset-trial/', $user['id'], '&token=', $csrf_token)}" onclick="return confirm('{Lang::T('Clear trial MAC list')}?')">
                                         <span class="glyphicon glyphicon-refresh"></span> {Lang::T('Reset')}
                                     </a>
                                     <a class="btn btn-danger btn-xs" title="delete" href="{Text::url('hotspot-users/delete/', $user['id'], '&token=', $csrf_token)}" onclick="return confirm('{Lang::T('Delete this user')}?')">
