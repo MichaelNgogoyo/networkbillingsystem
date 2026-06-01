@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apperstar WiFi</title>
+    <title>Hostel Wifi - Sign In</title>
     <style>
         * {
             margin: 0;
@@ -13,7 +13,17 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: 
+                linear-gradient(45deg, rgba(40,40,40,0.8), rgba(60,40,20,0.8)),
+                repeating-linear-gradient(90deg, 
+                    #3e2723 0px,
+                    #4e342e 2px,
+                    #5d4037 4px,
+                    #6d4c41 6px,
+                    #795548 8px,
+                    #8d6e63 10px);
+            background-size: cover;
+            background-attachment: fixed;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -22,46 +32,82 @@
         }
 
         .container {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 500px;
+            max-width: 1000px;
             width: 100%;
-            overflow: hidden;
         }
 
+        /* Header with logo */
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px 40px;
             text-align: center;
+            margin-bottom: 40px;
+            color: white;
         }
 
         .logo {
-            font-size: 48px;
+            font-size: 64px;
             margin-bottom: 10px;
+            font-weight: bold;
+            letter-spacing: 2px;
         }
 
-        h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
-        }
-
-        .subtitle {
+        .logo-subtitle {
             font-size: 14px;
+            letter-spacing: 3px;
             opacity: 0.9;
         }
 
+        /* Two column layout */
         .content {
-            padding: 30px 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
         }
 
-        .step-indicator {
-            font-size: 12px;
-            color: #999;
-            margin-bottom: 20px;
-            text-align: center;
+        /* Left side - Authentication forms */
+        .auth-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: none;
+            font-size: 16px;
             font-weight: 600;
+            cursor: pointer;
+            color: #999;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #1976d2;
+            border-bottom-color: #1976d2;
+        }
+
+        .tab-btn:hover {
+            color: #333;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .form-group {
@@ -70,678 +116,643 @@
 
         label {
             display: block;
-            font-size: 13px;
+            margin-bottom: 8px;
             font-weight: 600;
             color: #333;
-            margin-bottom: 8px;
+            font-size: 14px;
         }
 
-        input, select {
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"] {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #eee;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 14px;
-            font-family: inherit;
-            transition: all 0.3s;
+            transition: border-color 0.3s;
         }
 
-        input:focus, select:focus {
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="tel"]:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #1976d2;
+            background: #f5f9ff;
         }
 
-        .form-hint {
-            font-size: 11px;
-            color: #999;
-            margin-top: 4px;
+        .input-with-prefix {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .hidden {
-            display: none;
+        .prefix {
+            background: #f0f0f0;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #666;
+            min-width: 80px;
+            text-align: center;
         }
 
-        .visible {
-            display: block;
+        .input-with-prefix input {
+            flex: 1;
         }
 
-        button {
+        .forgot-link {
+            text-align: right;
+            font-size: 13px;
+        }
+
+        .forgot-link a {
+            color: #ff9800;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .forgot-link a:hover {
+            text-decoration: underline;
+        }
+
+        .submit-btn {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
             border: none;
             border-radius: 8px;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             margin-top: 10px;
         }
 
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        .submit-btn.signin {
+            background: #1976d2;
+            color: white;
         }
 
-        button:disabled {
+        .submit-btn.signin:hover {
+            background: #1565c0;
+        }
+
+        .submit-btn.register {
+            background: #ff5252;
+            color: white;
+        }
+
+        .submit-btn.register:hover {
+            background: #ff1744;
+        }
+
+        .submit-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
 
-        .message {
-            margin-top: 16px;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            display: none;
-            animation: slideIn 0.3s;
-            border-left: 4px solid;
+        .submit-btn.loading {
+            position: relative;
+            color: transparent;
         }
 
-        .message.error {
-            background: #fee;
-            color: #c00;
-            display: block;
-            border-left-color: #c00;
-        }
-
-        .message.success {
-            background: #efe;
-            color: #060;
-            display: block;
-            border-left-color: #060;
-        }
-
-        .message.info {
-            background: #eef;
-            color: #006;
-            display: block;
-            border-left-color: #006;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(-20px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            margin-top: 16px;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+        .submit-btn.loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid rgba(255,255,255,0.3);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
         }
 
-        .packages {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin: 20px 0;
-        }
-
-        .package {
-            border: 2px solid #eee;
-            border-radius: 8px;
-            padding: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: #f9f9f9;
-            text-align: center;
-        }
-
-        .package:hover {
-            border-color: #667eea;
-            background: #f0f4ff;
-            transform: translateY(-2px);
-        }
-
-        .package.active {
-            border-color: #667eea;
-            background: #667eea;
+        /* Right side - Packages */
+        .packages-section {
             color: white;
         }
 
-        .package.full {
-            grid-column: 1 / -1;
-        }
-
-        .package-name {
-            font-weight: 600;
-            font-size: 13px;
-            margin-bottom: 4px;
-        }
-
-        .package-price {
-            font-size: 16px;
+        .packages-title {
+            font-size: 24px;
             font-weight: bold;
-        }
-
-        .package-duration {
-            font-size: 11px;
-            opacity: 0.7;
-            margin-top: 2px;
-        }
-
-        .info-box {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
-            padding: 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #006;
             margin-bottom: 20px;
-            line-height: 1.5;
+            text-align: center;
         }
 
-        .btn-secondary {
-            background: #f0f4ff;
-            color: #667eea;
+        .packages-subtitle {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .packages-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .package {
+            padding: 16px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 15px;
+            border: 2px solid transparent;
+        }
+
+        .package:hover {
+            transform: translateX(5px);
+            filter: brightness(1.1);
+        }
+
+        .package.trial {
+            background: linear-gradient(135deg, #a855f7, #9333ea);
+        }
+
+        .package.hourly {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        .package.daily {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .package.premium {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .package.unlimited {
+            background: linear-gradient(135deg, #ec4899, #db2777);
+        }
+
+        .call-btn {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid white;
+            background: transparent;
+            color: white;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+
+        .call-btn:hover {
+            background: white;
+            color: #333;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .credentials-display {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .credentials-display h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .credential-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .credential-row:last-child {
+            border-bottom: none;
+        }
+
+        .credential-label {
+            color: #666;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .credential-value {
+            color: #1976d2;
+            font-weight: bold;
+            font-size: 15px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .refresh-btn {
+            width: 100%;
+            padding: 12px;
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .refresh-btn:hover {
+            background: #f57c00;
+        }
+
+        .sync-status {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
             margin-top: 10px;
+            text-align: center;
         }
 
-        .btn-secondary:hover {
-            background: #e0e8ff;
+        /* Responsive */
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .logo {
+                font-size: 48px;
+            }
+
+            .auth-section {
+                padding: 30px 20px;
+            }
+
+            .packages-title {
+                font-size: 20px;
+            }
+
+            .package {
+                font-size: 14px;
+                padding: 14px 16px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Header -->
         <div class="header">
-            <div class="logo">📡 WiFi</div>
-            <h1>Apperstar Hotspot</h1>
-            <div class="subtitle">Fast, Affordable Internet</div>
+            <div class="logo">H</div>
+            <div class="logo-subtitle">HOSTEL WIFI</div>
         </div>
 
+        <!-- Main Content -->
         <div class="content">
-            <!-- STEP 1: Enter Phone -->
-            <div id="step1" class="step">
-                <div class="step-indicator">Step 1 of 3: Enter Your Phone</div>
-                <form id="form-phone">
-                    <div class="form-group">
-                        <label for="phone">📱 Phone Number</label>
-                        <input 
-                            type="tel" 
-                            id="phone" 
-                            placeholder="254712345678"
-                            pattern="^254[0-9]{9}$"
-                            required
-                        >
-                        <div class="form-hint">Format: 254XXXXXXXXX (Kenyan number)</div>
-                    </div>
-                    <button type="submit" id="btn-check-phone">Continue</button>
-                    <div id="msg-phone" class="message"></div>
-                    <div id="load-phone" class="loading">
-                        <div class="spinner"></div>
-                    </div>
-                </form>
-            </div>
+            <!-- Left: Auth Section -->
+            <div class="auth-section">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('signin')">Sign In</button>
+                    <button class="tab-btn" onclick="switchTab('register')">Register</button>
+                </div>
 
-            <!-- STEP 2: PIN (New User Setup or Existing User Verify) -->
-            <div id="step2" class="step hidden">
-                <div class="step-indicator" id="step2-title">Step 2 of 3</div>
-                
-                <!-- For NEW users: Set PIN -->
-                <form id="form-setup-pin" class="hidden">
-                    <div class="info-box">
-                        ✨ Welcome! Set a 4-digit PIN for your account and get a free 10-minute trial!
-                    </div>
-                    <div class="form-group">
-                        <label for="setup-pin">🔐 Create 4-Digit PIN</label>
-                        <input 
-                            type="password" 
-                            id="setup-pin" 
-                            placeholder="e.g., 1234"
-                            pattern="^[0-9]{4}$"
-                            maxlength="4"
-                            inputmode="numeric"
-                            required
-                        >
-                        <div class="form-hint">Remember this PIN for future logins</div>
-                    </div>
-                    <button type="submit" id="btn-setup-pin">Create Account & Get Trial</button>
-                    <div id="msg-setup-pin" class="message"></div>
-                    <div id="load-setup-pin" class="loading">
-                        <div class="spinner"></div>
-                    </div>
-                </form>
-
-                <!-- For EXISTING users: Verify PIN -->
-                <form id="form-verify-pin" class="hidden">
-                    <div class="form-group">
-                        <label for="verify-pin">🔐 Enter Your 4-Digit PIN</label>
-                        <input 
-                            type="password" 
-                            id="verify-pin" 
-                            placeholder="0000"
-                            pattern="^[0-9]{4}$"
-                            maxlength="4"
-                            inputmode="numeric"
-                            required
-                        >
-                    </div>
-                    <button type="submit" id="btn-verify-pin">Continue</button>
-                    <div id="msg-verify-pin" class="message"></div>
-                    <div id="load-verify-pin" class="loading">
-                        <div class="spinner"></div>
-                    </div>
-                </form>
-
-                <button type="button" class="btn-secondary" onclick="goBack()">← Back</button>
-            </div>
-
-            <!-- STEP 3: Select Package -->
-            <div id="step3" class="step hidden">
-                <div class="step-indicator">Step 3 of 3: Select Your Package</div>
-                
-                <form id="form-package">
-                    <div class="form-group">
-                        <label>📦 Choose Internet Package</label>
-                        <div class="packages" id="packages-grid">
-                            <!-- Trial (only for first-time users) -->
-                            <div class="package full active" data-package='{"name":"Free Trial","key":"trial","price":"FREE","duration":"10 minutes","profile":"TEST-10M"}'>
-                                <div class="package-name">🎁 Free Trial</div>
-                                <div class="package-price">FREE</div>
-                                <div class="package-duration">10 minutes (one time only)</div>
-                            </div>
-
-                            <!-- Paid Packages -->
-                            <div class="package" data-package='{"name":"1 Hour","key":"1h","price":"KES 50","duration":"1 hour","profile":"1H"}'>
-                                <div class="package-name">1 Hour</div>
-                                <div class="package-price">KES 50</div>
-                            </div>
-
-                            <div class="package" data-package='{"name":"4 Hours","key":"4h","price":"KES 120","duration":"4 hours","profile":"4H"}'>
-                                <div class="package-name">4 Hours</div>
-                                <div class="package-price">KES 120</div>
-                            </div>
-
-                            <div class="package" data-package='{"name":"8 Hours","key":"8h","price":"KES 250","duration":"8 hours","profile":"8H"}'>
-                                <div class="package-name">8 Hours</div>
-                                <div class="package-price">KES 250</div>
-                            </div>
-
-                            <div class="package" data-package='{"name":"12 Hours","key":"12h","price":"KES 300","duration":"12 hours","profile":"12H"}'>
-                                <div class="package-name">12 Hours</div>
-                                <div class="package-price">KES 300</div>
-                            </div>
-
-                            <div class="package" data-package='{"name":"Daily","key":"daily","price":"KES 300","duration":"1 day","profile":"Daily"}'>
-                                <div class="package-name">📅 Daily</div>
-                                <div class="package-price">KES 300</div>
-                            </div>
-
-                            <div class="package" data-package='{"name":"Weekly","key":"weekly","price":"KES 1,500","duration":"7 days","profile":"Weekly"}'>
-                                <div class="package-name">📆 Weekly</div>
-                                <div class="package-price">KES 1,500</div>
-                            </div>
-
-                            <div class="package" data-package='{"name":"Monthly","key":"monthly","price":"KES 4,500","duration":"30 days","profile":"Monthly"}'>
-                                <div class="package-name">📗 Monthly</div>
-                                <div class="package-price">KES 4,500</div>
+                <!-- Sign In Tab -->
+                <div id="signin" class="tab-content active">
+                    <div id="signin-message"></div>
+                    <form onsubmit="handleSignIn(event)">
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <div class="input-with-prefix">
+                                <div class="prefix">+254</div>
+                                <input type="tel" id="signin-phone" placeholder="712345678" required>
                             </div>
                         </div>
-                    </div>
+                        <div class="form-group">
+                            <label>PIN Code</label>
+                            <input type="password" id="signin-pin" placeholder="Enter your 4-digit PIN" required>
+                            <div class="forgot-link">
+                                <a href="#" onclick="alert('Please contact support'); return false;">Forgot PIN?</a>
+                            </div>
+                        </div>
+                        <button type="submit" class="submit-btn signin">Sign In</button>
+                    </form>
+                </div>
 
-                    <div id="trial-notice" class="info-box hidden">
-                        🎁 You have one free 10-minute trial! Use it wisely.
-                    </div>
+                <!-- Register Tab -->
+                <div id="register" class="tab-content">
+                    <div id="register-message"></div>
+                    <form onsubmit="handleRegister(event)">
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <div class="input-with-prefix">
+                                <div class="prefix">+254</div>
+                                <input type="tel" id="register-phone" placeholder="712345678" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Create PIN (4 digits)</label>
+                            <input type="password" id="register-pin" placeholder="Enter 4-digit PIN" minlength="4" maxlength="4" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Referral Code (Optional)</label>
+                            <input type="text" id="referral-code" placeholder="Enter referral code if you have one">
+                        </div>
+                        <button type="submit" class="submit-btn register">Register & Get Trial</button>
+                    </form>
+                </div>
+            </div>
 
-                    <button type="submit" id="btn-select-package">Connect Now</button>
-                    <div id="msg-package" class="message"></div>
-                    <div id="load-package" class="loading">
-                        <div class="spinner"></div>
-                    </div>
-                </form>
+            <!-- Right: Packages Section -->
+            <div class="packages-section">
+                <div class="packages-title">Choose Your Plan</div>
+                <div class="packages-subtitle">Access fast and affordable packages</div>
+                
+                <div class="packages-list">
+                    <!-- Trial -->
+                    <div class="package trial" onclick="selectPackage('trial')">
+                        🎁 TRIAL - 10 MINUTES UNLIMITED @FREE (New users only)</div>
 
-                <button type="button" class="btn-secondary" onclick="goBack()">← Back</button>
+                    <!-- Hourly -->
+                    <div class="package hourly" onclick="selectPackage('1hour')">
+                        ⚡ 1 HOUR UNLIMITED @20/-</div>
+                    <div class="package hourly" onclick="selectPackage('4hours')">
+                        ⚡ 4 HOURS UNLIMITED @60/-</div>
+                    <div class="package hourly" onclick="selectPackage('8hours')">
+                        ⚡ 8 HOURS UNLIMITED @100/-</div>
+                    <div class="package hourly" onclick="selectPackage('12hours')">
+                        ⚡ 12 HOURS UNLIMITED @120/-</div>
+
+                    <!-- Daily -->
+                    <div class="package daily" onclick="selectPackage('daily')">
+                        🔥 DAILY UNLIMITED @30/-</div>
+
+                    <!-- Weekly -->
+                    <div class="package premium" onclick="selectPackage('weekly')">
+                        🌟 WEEKLY UNLIMITED @200/-</div>
+
+                    <!-- Monthly -->
+                    <div class="package unlimited" onclick="selectPackage('monthly')">
+                        🚀 MONTHLY UNLIMITED @500/-</div>
+                </div>
+
+                <button class="call-btn">📞 Call Us for Support</button>
+
+                <div class="footer">
+                    Copyright © Hostel Wifi
+                </div>
+            </div>
+        </div>
+
+        <!-- Credentials Display (shown after signup/signin) -->
+        <div id="credentials-section" style="display: none; margin-top: 30px;">
+            <div class="credentials-display">
+                <h3>✓ Your WiFi Credentials</h3>
+                <div class="credential-row">
+                    <span class="credential-label">Username:</span>
+                    <span class="credential-value" id="cred-username">-</span>
+                </div>
+                <div class="credential-row">
+                    <span class="credential-label">Password:</span>
+                    <span class="credential-value" id="cred-password">Preparing...</span>
+                </div>
+                <div class="credential-row">
+                    <span class="credential-label">Plan:</span>
+                    <span class="credential-value" id="cred-plan">-</span>
+                </div>
+                <div class="sync-status" id="sync-status" style="display: none;">
+                    ⏳ Password being prepared (1-2 minutes). We'll auto-refresh...
+                </div>
+                <button type="button" class="refresh-btn" onclick="checkPassword()">🔄 Refresh Password</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Determine which API endpoint to use based on the current location
+        const API_BASE = getApiUrl();
+        let sessionId = null;
+        let currentPhone = null;
+        let currentPackage = null;
+        let refreshTimer = null;
+
         function getApiUrl() {
-            const hostname = window.location.hostname;
-            
-            // If on the local hotspot network, use HTTP local API on hotspot folder
-            if (hostname === '192.168.88.1') {
-                return 'http://192.168.88.1/hotspot/hotspot-simple-api.php';
+            // Check if on local network (192.168.88.1) or production
+            if (window.location.hostname === '192.168.88.1' || window.location.hostname === 'localhost') {
+                return 'http://192.168.88.1/system/hotspot-simple-api.php';
             }
-            
-            // If on localhost
-            if (hostname === 'localhost' || hostname === '127.0.0.1') {
-                return 'http://localhost/hotspot/hotspot-simple-api.php';
-            }
-            
-            // If running on production domain
-            if (hostname.includes('network.apperstar.dev') || hostname.includes('apperstar.dev')) {
-                return 'https://network.apperstar.dev/system/hotspot-simple-api.php';
-            }
-            
-            // Default to HTTPS remote API
-            return 'https://network.apperstar.dev/system/hotspot-simple-api.php';
+            return '/system/hotspot-simple-api.php';
         }
-        
-        let API_URL = getApiUrl();
-        const REMOTE_API_URL = 'https://network.apperstar.dev/system/hotspot-simple-api.php';
-        const HOTSPOT_MODE = window.location.hostname === '192.168.88.1';
-        
-        let currentPhone = '';
-        let currentSessionId = '';
-        let isNewUser = false;
-        let selectedPackage = JSON.parse('{"name":"Free Trial","key":"trial","price":"FREE","duration":"10 minutes","profile":"TEST-10M"}');
-        let trialAlreadyUsed = false;
 
-        console.log('🔧 Hotspot Auth Init - Mode:', HOTSPOT_MODE ? 'HOTSPOT' : 'PRODUCTION', 'API:', API_URL, 'Hostname:', hostname);
+        function switchTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
-        // ========== STEP 1: Check Phone ==========
-        document.getElementById('form-phone').addEventListener('submit', async (e) => {
+            // Show selected tab
+            document.getElementById(tab).classList.add('active');
+            event.target.classList.add('active');
+
+            // Clear messages
+            document.getElementById('signin-message').innerHTML = '';
+            document.getElementById('register-message').innerHTML = '';
+        }
+
+        function showMessage(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="message ${type}">${message}</div>`;
+        }
+
+        function handleSignIn(e) {
             e.preventDefault();
-            const phone = document.getElementById('phone').value.trim();
-            const btn = document.getElementById('btn-check-phone');
-            const msg = document.getElementById('msg-phone');
-            const load = document.getElementById('load-phone');
+            const phone = '254' + document.getElementById('signin-phone').value;
+            const pin = document.getElementById('signin-pin').value;
 
             if (!/^254[0-9]{9}$/.test(phone)) {
-                showMessage(msg, '❌ Invalid format. Use 254XXXXXXXXX', 'error');
+                showMessage('signin-message', '❌ Phone format: +254 followed by 9 digits', 'error');
                 return;
             }
 
+            const btn = e.target.querySelector('button');
+            btn.classList.add('loading');
             btn.disabled = true;
-            load.style.display = 'block';
 
-            try {
-                const response = await fetch(API_URL + '?action=check-phone', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'phone=' + encodeURIComponent(phone),
-                    mode: 'cors',
-                    cache: 'no-store'
-                });
+            fetch(API_BASE, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=verify-pin&phone=${phone}&pin=${pin}`
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.classList.remove('loading');
+                btn.disabled = false;
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const result = await response.json();
-                load.style.display = 'none';
-
-                if (result.status === 'success') {
+                if (data.status === 'success') {
                     currentPhone = phone;
-                    isNewUser = !result.exists;
-
-                    if (isNewUser) {
-                        document.getElementById('form-setup-pin').classList.remove('hidden');
-                        document.getElementById('form-verify-pin').classList.add('hidden');
-                        document.getElementById('step2-title').textContent = 'Step 2 of 3: Create Your PIN';
-                    } else {
-                        document.getElementById('form-setup-pin').classList.add('hidden');
-                        document.getElementById('form-verify-pin').classList.remove('hidden');
-                        document.getElementById('step2-title').textContent = 'Step 2 of 3: Verify Your PIN';
-                    }
-
-                    showStep(2);
+                    sessionId = data.session_id;
+                    showMessage('signin-message', '✓ PIN verified! Now select a package', 'success');
+                    showPackageSelection();
                 } else {
-                    showMessage(msg, '❌ ' + result.message, 'error');
-                    btn.disabled = false;
+                    showMessage('signin-message', '❌ ' + data.message, 'error');
                 }
-            } catch (error) {
-                load.style.display = 'none';
-                console.error('❌ API Error:', error.message, 'API_URL:', API_URL);
-                
-                let errorMsg = 'Connection error';
-                if (error.message === 'Failed to fetch') {
-                    errorMsg = 'Cannot reach authentication server. Ensure you are connected to the hotspot WiFi and it has internet access.';
-                } else if (error.message.includes('HTTP')) {
-                    errorMsg = 'Server error: ' + error.message;
-                } else {
-                    errorMsg = error.message || 'Network error';
-                }
-                
-                showMessage(msg, '❌ ' + errorMsg, 'error');
+            })
+            .catch(err => {
+                btn.classList.remove('loading');
                 btn.disabled = false;
-            }
-        });
+                showMessage('signin-message', '❌ Connection error: ' + err.message, 'error');
+            });
+        }
 
-        // ========== STEP 2A: New User PIN Setup ==========
-        document.getElementById('form-setup-pin').addEventListener('submit', async (e) => {
+        function handleRegister(e) {
             e.preventDefault();
-            const pin = document.getElementById('setup-pin').value;
-            const btn = document.getElementById('btn-setup-pin');
-            const msg = document.getElementById('msg-setup-pin');
-            const load = document.getElementById('load-setup-pin');
+            const phone = '254' + document.getElementById('register-phone').value;
+            const pin = document.getElementById('register-pin').value;
 
-            if (!/^[0-9]{4}$/.test(pin)) {
-                showMessage(msg, '❌ PIN must be 4 digits', 'error');
+            if (!/^254[0-9]{9}$/.test(phone)) {
+                showMessage('register-message', '❌ Phone format: +254 followed by 9 digits', 'error');
                 return;
             }
 
-            btn.disabled = true;
-            load.style.display = 'block';
-
-            try {
-                const response = await fetch(API_URL + '?action=create-user', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'phone=' + encodeURIComponent(currentPhone) + '&pin=' + encodeURIComponent(pin)
-                });
-
-                const result = await response.json();
-                load.style.display = 'none';
-
-                if (result.status === 'success') {
-                    currentSessionId = result.session_id;
-                    showMessage(msg, '✓ ' + result.message, 'success');
-                    setTimeout(() => {
-                        selectedPackage = JSON.parse('{"name":"Free Trial","key":"trial","price":"FREE","duration":"10 minutes","profile":"TEST-10M"}');
-                        document.querySelector('.package[data-package*="trial"]').classList.add('active');
-                        showStep(3);
-                        document.getElementById('trial-notice').classList.remove('hidden');
-                    }, 1000);
-                } else {
-                    showMessage(msg, '❌ ' + result.message, 'error');
-                    btn.disabled = false;
-                }
-            } catch (error) {
-                load.style.display = 'none';
-                console.error('❌ Create User Error:', error.message);
-                
-                let errorMsg = error.message || 'Failed to create account';
-                showMessage(msg, '❌ ' + errorMsg, 'error');
-                btn.disabled = false;
-            }
-        });
-
-        // ========== STEP 2B: Existing User PIN Verify ==========
-        document.getElementById('form-verify-pin').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const pin = document.getElementById('verify-pin').value;
-            const btn = document.getElementById('btn-verify-pin');
-            const msg = document.getElementById('msg-verify-pin');
-            const load = document.getElementById('load-verify-pin');
-
-            if (!/^[0-9]{4}$/.test(pin)) {
-                showMessage(msg, '❌ PIN must be 4 digits', 'error');
+            if (pin.length !== 4 || !/^\d+$/.test(pin)) {
+                showMessage('register-message', '❌ PIN must be 4 digits', 'error');
                 return;
             }
 
+            const btn = e.target.querySelector('button');
+            btn.classList.add('loading');
             btn.disabled = true;
-            load.style.display = 'block';
 
-            try {
-                const response = await fetch(API_URL + '?action=verify-pin', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'phone=' + encodeURIComponent(currentPhone) + '&pin=' + encodeURIComponent(pin)
-                });
+            fetch(API_BASE, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=create-user&phone=${phone}&pin=${pin}`
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.classList.remove('loading');
+                btn.disabled = false;
 
-                const result = await response.json();
-                load.style.display = 'none';
+                if (data.status === 'success') {
+                    currentPhone = phone;
+                    sessionId = data.session_id;
+                    showMessage('register-message', '✓ Account created! Select a plan to continue', 'success');
+                    showPackageSelection();
+                } else {
+                    showMessage('register-message', '❌ ' + data.message, 'error');
+                }
+            })
+            .catch(err => {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                showMessage('register-message', '❌ Connection error: ' + err.message, 'error');
+            });
+        }
 
-                if (result.status === 'success') {
-                    currentSessionId = result.session_id;
-                    trialAlreadyUsed = result.trial_used;
+        function selectPackage(packageName) {
+            if (!sessionId) {
+                alert('Please sign in or register first');
+                return;
+            }
 
-                    if (trialAlreadyUsed) {
-                        document.querySelector('.package[data-package*="trial"]').style.display = 'none';
-                        document.getElementById('trial-notice').innerHTML = '✓ Trial already used. Select a paid package.';
-                        document.getElementById('trial-notice').classList.remove('hidden');
+            currentPackage = packageName;
+            const btn = event.target;
+            btn.style.opacity = '0.7';
+
+            fetch(API_BASE, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=select-package&phone=${currentPhone}&session_id=${sessionId}&package=${packageName}`
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.style.opacity = '1';
+
+                if (data.status === 'success') {
+                    // Display credentials
+                    document.getElementById('cred-username').textContent = data.username;
+                    document.getElementById('cred-password').textContent = data.password || 'Preparing...';
+                    document.getElementById('cred-plan').textContent = data.profile;
+                    document.getElementById('credentials-section').style.display = 'block';
+
+                    if (data.sync_pending) {
+                        document.getElementById('sync-status').style.display = 'block';
+                        // Auto-refresh after 30 seconds
+                        setTimeout(checkPassword, 30000);
                     }
 
-                    showMessage(msg, '✓ ' + result.message, 'success');
-                    setTimeout(() => {
-                        showStep(3);
-                    }, 800);
+                    // Scroll to credentials
+                    document.getElementById('credentials-section').scrollIntoView({ behavior: 'smooth' });
                 } else {
-                    showMessage(msg, '❌ ' + result.message, 'error');
-                    btn.disabled = false;
+                    alert('Error: ' + data.message);
                 }
-            } catch (error) {
-                load.style.display = 'none';
-                showMessage(msg, '❌ Error: ' + error.message, 'error');
-                btn.disabled = false;
-            }
-        });
-
-        // ========== STEP 3: Package Selection ==========
-        document.querySelectorAll('.package').forEach(pkg => {
-            pkg.addEventListener('click', function() {
-                document.querySelectorAll('.package').forEach(p => p.classList.remove('active'));
-                this.classList.add('active');
-                selectedPackage = JSON.parse(this.dataset.package);
+            })
+            .catch(err => {
+                btn.style.opacity = '1';
+                alert('Connection error: ' + err.message);
             });
-        });
+        }
 
-        document.getElementById('form-package').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btn-select-package');
-            const msg = document.getElementById('msg-package');
-            const load = document.getElementById('load-package');
+        function checkPassword() {
+            if (!currentPhone || !currentPackage) return;
 
-            btn.disabled = true;
-            load.style.display = 'block';
-
-            try {
-                let mac = '$(mac-esc)';
-                let ip = '$(ip)';
-                if (mac.startsWith('$')) mac = '00:00:00:00:00:00';
-                if (ip.startsWith('$')) ip = '0.0.0.0';
-
-                const response = await fetch(API_URL + '?action=select-package', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'phone=' + encodeURIComponent(currentPhone) + 
-                          '&package=' + encodeURIComponent(selectedPackage.name) +
-                          '&session_id=' + encodeURIComponent(currentSessionId) +
-                          '&device_mac=' + encodeURIComponent(mac) +
-                          '&device_ip=' + encodeURIComponent(ip)
-                });
-
-                const result = await response.json();
-                load.style.display = 'none';
-
-                if (result.status === 'success') {
-                    showMessage(msg, '✓ ' + result.message, 'success');
-                    
-                    // Show username and credentials
-                    if (result.username) {
-                        setTimeout(() => {
-                            const credSection = document.createElement('div');
-                            credSection.style.cssText = 'background:#f0f0f0; padding:15px; border-radius:8px; margin-top:10px; text-align:left; font-family:monospace; font-size:13px;';
-                            credSection.id = 'cred-section-' + result.username;
-                            let credHtml = '<strong style="display:block; margin-bottom:10px;">Your WiFi Credentials:</strong>';
-                            credHtml += 'Username: <code style="background:white; padding:5px; border-radius:4px; display:block; margin-bottom:8px;">' + escapeHtml(result.username) + '</code>';
-                            
-                            if (result.password) {
-                                credHtml += 'Password: <code style="background:white; padding:5px; border-radius:4px; display:block; margin-bottom:8px;">' + escapeHtml(result.password) + '</code>';
-                                credHtml += '<small style="display:block; margin-top:10px; color:#666;">✅ Use these credentials to log in to the WiFi hotspot.<br/>Open Settings → WiFi → Select this network → Enter username and password above.</small>';
-                            } else if (result.sync_pending) {
-                                credHtml += '<small style="display:block; margin-top:10px; color:#1e88e5; font-weight:bold;">⏳ Password is being prepared (1-2 minutes)</small>';
-                                credHtml += '<button type="button" id="btn-refresh-' + escapeHtml(result.username) + '" style="margin-top:10px; padding:10px 15px; background:#1e88e5; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Refresh to Get Password</button>';
-                                credHtml += '<small id="auto-refresh-' + escapeHtml(result.username) + '" style="display:block; margin-top:8px; color:#999;">Auto-refreshing in 30 seconds...</small>';
-                            }
-                            
-                            credSection.innerHTML = credHtml;
-                            msg.parentNode.insertBefore(credSection, msg.nextSibling);
-                            
-                            // Setup auto-refresh if password is pending
-                            if (result.sync_pending) {
-                                const btn = document.getElementById('btn-refresh-' + escapeHtml(result.username));
-                                const statusEl = document.getElementById('auto-refresh-' + escapeHtml(result.username));
-                                
-                                // Manual refresh button
-                                btn.addEventListener('click', () => {
-                                    location.reload();
-                                });
-                                
-                                // Auto-refresh after 30 seconds
-                                setTimeout(() => {
-                                    statusEl.textContent = 'Refreshing...';
-                                    location.reload();
-                                }, 30000);
-                            }
-                        }, 300);
-                    }
-                    
-                    // Do NOT redirect - let user see and use credentials
-                    // Remove: window.location.href = '/status.html';
-                } else {
-                    showMessage(msg, '❌ ' + result.message, 'error');
-                    btn.disabled = false;
+            fetch(API_BASE, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=check-password&phone=${currentPhone}&package=${currentPackage}`
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.password) {
+                    document.getElementById('cred-password').textContent = data.password;
+                    document.getElementById('sync-status').style.display = 'none';
                 }
-            } catch (error) {
-                load.style.display = 'none';
-                showMessage(msg, '❌ Error: ' + error.message, 'error');
-                btn.disabled = false;
-            }
-        });
-
-        // ========== UTILITIES ==========
-        function showStep(stepNum) {
-            document.querySelectorAll('.step').forEach(step => step.classList.add('hidden'));
-            document.getElementById('step' + stepNum).classList.remove('hidden');
+            })
+            .catch(err => console.error('Refresh error:', err));
         }
 
-        function goBack() {
-            let currentStep = null;
-            document.querySelectorAll('.step').forEach((step, idx) => {
-                if (!step.classList.contains('hidden')) currentStep = idx + 1;
-            });
-
-            if (currentStep > 1) {
-                showStep(currentStep - 1);
-            }
-        }
-
-        function showMessage(element, text, type) {
-            element.textContent = text;
-            element.className = 'message ' + type;
-        }
-
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
+        function showPackageSelection() {
+            // Hide the tabs and show packages
+            document.querySelector('.tabs').style.display = 'none';
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
         }
     </script>
 </body>
