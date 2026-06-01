@@ -575,12 +575,14 @@
         let currentPackage = null;
         let refreshTimer = null;
 
+        // Log page info for debugging
+        console.log('🌐 Page loaded from:', window.location.href);
+        console.log('📡 API Endpoint:', API_BASE);
+
         function getApiUrl() {
-            // Check if on local network (192.168.88.1) or production
-            if (window.location.hostname === '192.168.88.1' || window.location.hostname === 'localhost') {
-                return 'http://192.168.88.1/system/hotspot-simple-api.php';
-            }
-            return '/system/hotspot-simple-api.php';
+            // Always use the production API domain for reliability
+            // This works from both local MikroTik and remote connections
+            return 'https://network.apperstar.dev/system/hotspot-simple-api.php';
         }
 
         function switchTab(tab) {
@@ -616,12 +618,24 @@
             btn.classList.add('loading');
             btn.disabled = true;
 
+            console.log('📱 Signing in with phone:', phone);
             fetch(API_BASE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=verify-pin&phone=${phone}&pin=${pin}`
+                body: `action=verify-pin&phone=${phone}&pin=${pin}`,
+                mode: 'cors'
             })
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) throw new Error(`API Error: ${r.status}`);
+                return r.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch(e) {
+                        console.error('Response:', text);
+                        throw new Error('Invalid response from server');
+                    }
+                });
+            })
             .then(data => {
                 btn.classList.remove('loading');
                 btn.disabled = false;
@@ -638,7 +652,8 @@
             .catch(err => {
                 btn.classList.remove('loading');
                 btn.disabled = false;
-                showMessage('signin-message', '❌ Connection error: ' + err.message, 'error');
+                console.error('Sign In Error:', err);
+                showMessage('signin-message', '❌ Error: ' + err.message, 'error');
             });
         }
 
@@ -661,12 +676,24 @@
             btn.classList.add('loading');
             btn.disabled = true;
 
+            console.log('📝 Registering phone:', phone);
             fetch(API_BASE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=create-user&phone=${phone}&pin=${pin}`
+                body: `action=create-user&phone=${phone}&pin=${pin}`,
+                mode: 'cors'
             })
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) throw new Error(`API Error: ${r.status}`);
+                return r.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch(e) {
+                        console.error('Response:', text);
+                        throw new Error('Invalid response from server');
+                    }
+                });
+            })
             .then(data => {
                 btn.classList.remove('loading');
                 btn.disabled = false;
@@ -683,7 +710,8 @@
             .catch(err => {
                 btn.classList.remove('loading');
                 btn.disabled = false;
-                showMessage('register-message', '❌ Connection error: ' + err.message, 'error');
+                console.error('Register Error:', err);
+                showMessage('register-message', '❌ Error: ' + err.message, 'error');
             });
         }
 
@@ -700,9 +728,20 @@
             fetch(API_BASE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=select-package&phone=${currentPhone}&session_id=${sessionId}&package=${packageName}`
+                body: `action=select-package&phone=${currentPhone}&session_id=${sessionId}&package=${packageName}`,
+                mode: 'cors'
             })
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) throw new Error(`API Error: ${r.status}`);
+                return r.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch(e) {
+                        console.error('Response:', text);
+                        throw new Error('Invalid response from server');
+                    }
+                });
+            })
             .then(data => {
                 btn.style.opacity = '1';
 
@@ -737,9 +776,20 @@
             fetch(API_BASE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=check-password&phone=${currentPhone}&package=${currentPackage}`
+                body: `action=check-password&phone=${currentPhone}&package=${currentPackage}`,
+                mode: 'cors'
             })
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) throw new Error(`API Error: ${r.status}`);
+                return r.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch(e) {
+                        console.error('Response:', text);
+                        throw new Error('Invalid response from server');
+                    }
+                });
+            })
             .then(data => {
                 if (data.password) {
                     document.getElementById('cred-password').textContent = data.password;

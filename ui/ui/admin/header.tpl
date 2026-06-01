@@ -125,6 +125,12 @@
                             <span>{Lang::T('Customer')}</span>
                         </a>
                     </li>
+                    <li {if $_system_menu eq 'hotspot-users' }class="active" {/if}>
+                        <a href="{Text::url('hotspot-users')}">
+                            <i class="fa fa-wifi"></i>
+                            <span>{Lang::T('WiFi Users')}</span>
+                        </a>
+                    </li>
                     {$_MENU_AFTER_CUSTOMERS}
                     {if !in_array($_admin['user_type'],['Report'])}
                         <li class="{if $_routes[0] eq 'plan' || $_routes[0] eq 'coupons'}active{/if} treeview">
