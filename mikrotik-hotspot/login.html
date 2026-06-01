@@ -570,10 +570,9 @@
 
     <script>
         const API_BASE = getApiUrl();
-        let sessionId = null;
-        let currentPhone = null;
-        let currentPackage = null;
-        let refreshTimer = null;
+        let authenticatedPhone = null;
+        let authenticatedPin = null;
+        let selectedPackage = null;
 
         // Log page info for debugging
         console.log('🌐 Page loaded from:', window.location.href);
@@ -641,9 +640,10 @@
                 btn.disabled = false;
 
                 if (data.status === 'success') {
-                    currentPhone = phone;
-                    sessionId = data.session_id;
-                    showMessage('signin-message', '✓ PIN verified! Now select a package', 'success');
+                    // Store authenticated credentials
+                    authenticatedPhone = phone;
+                    authenticatedPin = pin;
+                    showMessage('signin-message', '✓ PIN verified! Now select a package and click Connect', 'success');
                     showPackageSelection();
                 } else {
                     showMessage('signin-message', '❌ ' + data.message, 'error');
@@ -699,9 +699,10 @@
                 btn.disabled = false;
 
                 if (data.status === 'success') {
-                    currentPhone = phone;
-                    sessionId = data.session_id;
-                    showMessage('register-message', '✓ Account created! Select a plan to continue', 'success');
+                    // Store authenticated credentials
+                    authenticatedPhone = phone;
+                    authenticatedPin = pin;
+                    showMessage('register-message', '✓ Account created! Select a package and click Connect to continue', 'success');
                     showPackageSelection();
                 } else {
                     showMessage('register-message', '❌ ' + data.message, 'error');
@@ -716,87 +717,74 @@
         }
 
         function selectPackage(packageName) {
-            if (!sessionId) {
+            if (!authenticatedPhone) {
                 alert('Please sign in or register first');
                 return;
             }
 
-            currentPackage = packageName;
-            const btn = event.target;
-            btn.style.opacity = '0.7';
-
-            fetch(API_BASE, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=select-package&phone=${currentPhone}&session_id=${sessionId}&package=${packageName}`,
-                mode: 'cors'
-            })
-            .then(r => {
-                if (!r.ok) throw new Error(`API Error: ${r.status}`);
-                return r.text().then(text => {
-                    try {
-                        return JSON.parse(text);
-                    } catch(e) {
-                        console.error('Response:', text);
-                        throw new Error('Invalid response from server');
-                    }
-                });
-            })
-            .then(data => {
-                btn.style.opacity = '1';
-
-                if (data.status === 'success') {
-                    // Display credentials
-                    document.getElementById('cred-username').textContent = data.username;
-                    document.getElementById('cred-password').textContent = data.password || 'Preparing...';
-                    document.getElementById('cred-plan').textContent = data.profile;
-                    document.getElementById('credentials-section').style.display = 'block';
-
-                    if (data.sync_pending) {
-                        document.getElementById('sync-status').style.display = 'block';
-                        // Auto-refresh after 30 seconds
-                        setTimeout(checkPassword, 30000);
-                    }
-
-                    // Scroll to credentials
-                    document.getElementById('credentials-section').scrollIntoView({ behavior: 'smooth' });
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(err => {
-                btn.style.opacity = '1';
-                alert('Connection error: ' + err.message);
+            // Just select the package - don't connect yet
+            selectedPackage = packageName;
+            
+            // Highlight the selected package
+            document.querySelectorAll('.package').forEach(pkg => {
+                pkg.style.borderColor = 'transparent';
+                pkg.style.borderWidth = '2px';
             });
+            event.target.style.borderColor = 'white';
+            event.target.style.borderWidth = '2px';
+            
+            // Show connect button
+            showConnectButton();
         }
 
-        function checkPassword() {
-            if (!currentPhone || !currentPackage) return;
+        function showConnectButton() {
+            // Remove old connect button if exists
+            const oldBtn = document.getElementById('connect-btn');
+            if (oldBtn) oldBtn.remove();
 
-            fetch(API_BASE, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=check-password&phone=${currentPhone}&package=${currentPackage}`,
-                mode: 'cors'
-            })
-            .then(r => {
-                if (!r.ok) throw new Error(`API Error: ${r.status}`);
-                return r.text().then(text => {
-                    try {
-                        return JSON.parse(text);
-                    } catch(e) {
-                        console.error('Response:', text);
-                        throw new Error('Invalid response from server');
-                    }
-                });
-            })
-            .then(data => {
-                if (data.password) {
-                    document.getElementById('cred-password').textContent = data.password;
-                    document.getElementById('sync-status').style.display = 'none';
-                }
-            })
-            .catch(err => console.error('Refresh error:', err));
+            // Create connect button
+            const connectBtn = document.createElement('button');
+            connectBtn.id = 'connect-btn';
+            connectBtn.className = 'submit-btn signin';
+            connectBtn.style.marginTop = '20px';
+            connectBtn.textContent = '🔗 Connect to WiFi';
+            connectBtn.onclick = connectToWiFi;
+
+            // Find packages section and add button
+            const packagesSection = document.querySelector('.packages-section');
+            packagesSection.appendChild(connectBtn);
+
+            // Scroll to button
+            setTimeout(() => connectBtn.scrollIntoView({ behavior: 'smooth' }), 100);
+        }
+
+        function connectToWiFi() {
+            if (!selectedPackage || !authenticatedPhone || !authenticatedPin) {
+                alert('Please select a package first');
+                return;
+            }
+
+            // Display credentials
+            document.getElementById('cred-username').textContent = authenticatedPhone;
+            document.getElementById('cred-password').textContent = authenticatedPin;
+            
+            // Map package names to friendly names
+            const packageNames = {
+                'trial': 'Trial - 10 Minutes',
+                '1hour': '1 Hour Unlimited',
+                '4hours': '4 Hours Unlimited',
+                '8hours': '8 Hours Unlimited',
+                '12hours': '12 Hours Unlimited',
+                'daily': 'Daily Unlimited',
+                'weekly': 'Weekly Unlimited',
+                'monthly': 'Monthly Unlimited'
+            };
+            
+            document.getElementById('cred-plan').textContent = packageNames[selectedPackage] || selectedPackage;
+            document.getElementById('credentials-section').style.display = 'block';
+
+            // Scroll to credentials
+            document.getElementById('credentials-section').scrollIntoView({ behavior: 'smooth' });
         }
 
         function showPackageSelection() {
