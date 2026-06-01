@@ -608,6 +608,8 @@
             const phone = '254' + document.getElementById('signin-phone').value;
             const pin = document.getElementById('signin-pin').value;
 
+            console.log('📱 handleSignIn starting...');
+
             if (!/^254[0-9]{9}$/.test(phone)) {
                 showMessage('signin-message', '❌ Phone format: +254 followed by 9 digits', 'error');
                 return;
@@ -618,6 +620,9 @@
             btn.disabled = true;
 
             console.log('📱 Signing in with phone:', phone);
+            console.log('📱 API Endpoint:', API_BASE);
+            console.log('📱 Sending: action=verify-pin&phone=' + phone + '&pin=' + pin);
+
             fetch(API_BASE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -625,34 +630,39 @@
                 mode: 'cors'
             })
             .then(r => {
+                console.log('📡 API Response status:', r.status, r.statusText);
                 if (!r.ok) throw new Error(`API Error: ${r.status}`);
                 return r.text().then(text => {
+                    console.log('📡 API Response body:', text);
                     try {
                         return JSON.parse(text);
                     } catch(e) {
-                        console.error('Response:', text);
+                        console.error('❌ JSON Parse Error:', text);
                         throw new Error('Invalid response from server');
                     }
                 });
             })
             .then(data => {
+                console.log('✓ Parsed API response:', data);
                 btn.classList.remove('loading');
                 btn.disabled = false;
 
-                if (data.status === 'success') {
-                    // Store authenticated credentials
+                if (data && data.status === 'success') {
+                    console.log('✓ Sign in successful! Setting auth state...');
                     authenticatedPhone = phone;
                     authenticatedPin = pin;
+                    console.log('✓ Auth state saved:', { authenticatedPhone, authenticatedPin });
                     showMessage('signin-message', '✓ PIN verified! Now select a package and click Connect', 'success');
                     showPackageSelection();
                 } else {
-                    showMessage('signin-message', '❌ ' + data.message, 'error');
+                    console.error('❌ Sign in failed:', data?.message || 'Unknown error');
+                    showMessage('signin-message', '❌ ' + (data?.message || 'Invalid credentials'), 'error');
                 }
             })
             .catch(err => {
+                console.error('❌ Sign In Error:', err);
                 btn.classList.remove('loading');
                 btn.disabled = false;
-                console.error('Sign In Error:', err);
                 showMessage('signin-message', '❌ Error: ' + err.message, 'error');
             });
         }
@@ -661,6 +671,8 @@
             e.preventDefault();
             const phone = '254' + document.getElementById('register-phone').value;
             const pin = document.getElementById('register-pin').value;
+
+            console.log('📝 handleRegister starting...');
 
             if (!/^254[0-9]{9}$/.test(phone)) {
                 showMessage('register-message', '❌ Phone format: +254 followed by 9 digits', 'error');
@@ -677,6 +689,9 @@
             btn.disabled = true;
 
             console.log('📝 Registering phone:', phone);
+            console.log('📝 API Endpoint:', API_BASE);
+            console.log('📝 Sending: action=create-user&phone=' + phone + '&pin=' + pin);
+
             fetch(API_BASE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -684,46 +699,63 @@
                 mode: 'cors'
             })
             .then(r => {
+                console.log('📡 API Response status:', r.status, r.statusText);
                 if (!r.ok) throw new Error(`API Error: ${r.status}`);
                 return r.text().then(text => {
+                    console.log('📡 API Response body:', text);
                     try {
                         return JSON.parse(text);
                     } catch(e) {
-                        console.error('Response:', text);
+                        console.error('❌ JSON Parse Error:', text);
                         throw new Error('Invalid response from server');
                     }
                 });
             })
             .then(data => {
+                console.log('✓ Parsed API response:', data);
                 btn.classList.remove('loading');
                 btn.disabled = false;
 
-                if (data.status === 'success') {
-                    // Store authenticated credentials
+                if (data && data.status === 'success') {
+                    console.log('✓ Registration successful! Setting auth state...');
                     authenticatedPhone = phone;
                     authenticatedPin = pin;
+                    console.log('✓ Auth state saved:', { authenticatedPhone, authenticatedPin });
                     showMessage('register-message', '✓ Account created! Select a package and click Connect to continue', 'success');
                     showPackageSelection();
                 } else {
-                    showMessage('register-message', '❌ ' + data.message, 'error');
+                    console.error('❌ Registration failed:', data?.message || 'Unknown error');
+                    showMessage('register-message', '❌ ' + (data?.message || 'Registration failed'), 'error');
                 }
             })
             .catch(err => {
+                console.error('❌ Register Error:', err);
                 btn.classList.remove('loading');
                 btn.disabled = false;
-                console.error('Register Error:', err);
                 showMessage('register-message', '❌ Error: ' + err.message, 'error');
             });
         }
 
         function selectPackage(packageName) {
-            if (!authenticatedPhone) {
-                alert('Please sign in or register first');
+            console.log('🎯 selectPackage called:', {
+                packageName,
+                authenticatedPhone,
+                authenticatedPin,
+                selectedPackage
+            });
+
+            if (!authenticatedPhone || !authenticatedPin) {
+                const msg = '❌ Please sign in or register first to select a package';
+                console.error(msg);
+                alert(msg);
+                // Scroll back to auth section so user can sign in
+                document.querySelector('.auth-section').scrollIntoView({ behavior: 'smooth' });
                 return;
             }
 
             // Just select the package - don't connect yet
             selectedPackage = packageName;
+            console.log('✓ Package selected:', packageName);
             
             // Highlight the selected package
             document.querySelectorAll('.package').forEach(pkg => {
@@ -791,6 +823,16 @@
             // Hide the tabs and show packages
             document.querySelector('.tabs').style.display = 'none';
             document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            
+            // Make packages section more prominent
+            const packagesSection = document.querySelector('.packages-section');
+            packagesSection.style.opacity = '1';
+            packagesSection.style.pointerEvents = 'auto';
+            
+            // Log state for debugging
+            console.log('✓ Auth successful - Packages now selectable');
+            console.log('  authenticatedPhone:', authenticatedPhone);
+            console.log('  Ready to select packages...');
         }
     </script>
 </body>
