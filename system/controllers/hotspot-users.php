@@ -35,7 +35,11 @@ switch ($action) {
             );
         }
 
-        $query->order_by($order, $order_pos[$order]);
+        if ($order_pos[$order] === 'asc') {
+            $query->order_by_asc($order);
+        } else {
+            $query->order_by_desc($order);
+        }
 
         $d = Paginator::findMany($query, ['search' => $search], 50, '&order=' . $order);
 
