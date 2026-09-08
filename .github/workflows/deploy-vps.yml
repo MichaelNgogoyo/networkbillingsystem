@@ -16,35 +16,84 @@ jobs:
 
       - name: Setup SSH key
         shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
         run: |
           set -euo pipefail
+          PORT="${VPS_PORT:-22}"
+
+          if [[ -z "${VPS_HOST}" || -z "${VPS_USER}" || -z "${VPS_SSH_PRIVATE_KEY}" ]]; then
+            echo "Missing required secrets. Ensure VPS_HOST, VPS_USER, and VPS_SSH_PRIVATE_KEY are set."
+            exit 1
+          fi
+
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "${{ secrets.VPS_SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p "${{ secrets.VPS_PORT || 22 }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+          # Validate private key file format before SSH usage.
+          ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null
+
+          if ! ssh-keyscan -T 10 -p "$PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
+            echo "Unable to fetch SSH host key from $VPS_HOST:$PORT"
+            echo "Check VPS_HOST/VPS_PORT, firewall rules, and that sshd is listening."
+            exit 1
+          fi
+
+      - name: Test SSH login
+        shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          set -euo pipefail
+          PORT="${VPS_PORT:-22}"
+          ssh -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" "echo SSH_OK && whoami"
 
       - name: Ensure remote app directory
         shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
-          ssh -p "${{ secrets.VPS_PORT || 22 }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "mkdir -p /home/${{ secrets.VPS_USER }}/networkbillingsystem"
+          set -euo pipefail
+          PORT="${VPS_PORT:-22}"
+          ssh -p "$PORT" "$VPS_USER@$VPS_HOST" "mkdir -p /home/$VPS_USER/networkbillingsystem"
 
       - name: Sync project to VPS (tar stream)
         shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
           set -euo pipefail
+          PORT="${VPS_PORT:-22}"
           tar \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='.runtime' \
             -czf - . \
-            | ssh -p "${{ secrets.VPS_PORT || 22 }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "tar -xzf - -C /home/${{ secrets.VPS_USER }}/networkbillingsystem"
+            | ssh -p "$PORT" "$VPS_USER@$VPS_HOST" "tar -xzf - -C /home/$VPS_USER/networkbillingsystem"
 
       - name: Deploy on VPS
         shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
-          ssh -p "${{ secrets.VPS_PORT || 22 }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "\
-            cd /home/${{ secrets.VPS_USER }}/networkbillingsystem && \
+          set -euo pipefail
+          PORT="${VPS_PORT:-22}"
+          ssh -p "$PORT" "$VPS_USER@$VPS_HOST" "\
+            cd /home/$VPS_USER/networkbillingsystem && \
             TZ='${{ vars.TZ }}' \
             MYSQL_ROOT_PASSWORD='${{ secrets.MYSQL_ROOT_PASSWORD }}' \
             MYSQL_DATABASE='${{ vars.MYSQL_DATABASE }}' \
