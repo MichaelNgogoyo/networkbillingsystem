@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_DIR="/home/michael/networkbillingsystem"
-COMPOSE_BIN="${HOME}/.local/bin/docker-compose"
+APP_DIR="${APP_DIR:-$HOME/networkbillingsystem}"
+COMPOSE_BIN=""
 PERSIST_DIR="${APP_DIR}/.runtime"
 PERSIST_CONFIG="${PERSIST_DIR}/config.php"
 PERSIST_UPLOADS="${PERSIST_DIR}/system/uploads"
@@ -13,6 +13,17 @@ export COMPOSE_DOCKER_CLI_BUILD=0
 
 if [[ ! -d "$APP_DIR" ]]; then
   echo "App directory not found: $APP_DIR" >&2
+  exit 1
+fi
+
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_BIN="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_BIN="docker-compose"
+elif [[ -x "${HOME}/.local/bin/docker-compose" ]]; then
+  COMPOSE_BIN="${HOME}/.local/bin/docker-compose"
+else
+  echo "Docker Compose not found. Install docker compose plugin or docker-compose binary." >&2
   exit 1
 fi
 
@@ -38,13 +49,8 @@ MYSQL_PASSWORD=${MYSQL_PASSWORD}
 APP_DOMAIN=${APP_DOMAIN:-network.apperstar.dev}
 EOF
 
-if [[ ! -x "$COMPOSE_BIN" ]]; then
-  echo "docker-compose binary not found at $COMPOSE_BIN" >&2
-  exit 1
-fi
-
-"$COMPOSE_BIN" -f docker-compose.example.yml down || true
-"$COMPOSE_BIN" -f docker-compose.example.yml up -d --build
+$COMPOSE_BIN -f docker-compose.example.yml down || true
+$COMPOSE_BIN -f docker-compose.example.yml up -d --build
 
 # Restore runtime state into the new container after deploy.
 if docker ps --format '{{.Names}}' | grep -qx 'nuxbill'; then
@@ -59,4 +65,4 @@ if docker ps --format '{{.Names}}' | grep -qx 'nuxbill'; then
   docker exec nuxbill sh -lc 'chown -R www-data:www-data /var/www/html/system/uploads /var/www/html/config.php >/dev/null 2>&1 || true'
 fi
 
-"$COMPOSE_BIN" -f docker-compose.example.yml ps
+$COMPOSE_BIN -f docker-compose.example.yml ps
