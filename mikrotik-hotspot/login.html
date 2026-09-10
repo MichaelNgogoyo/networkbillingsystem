@@ -484,8 +484,9 @@
             </div>
 
             <div class="pane active" id="loginPane">
-                <form method="post" action="https://network.apperstar.dev/api/hotspot-payment.php" id="paymentForm">
+                <form method="post" action="/system/hotspot-payment-api.php" id="paymentForm">
                     <input type="hidden" name="package" id="selectedPackage" value="">
+                    <input type="hidden" name="mock_success" id="mockSuccessFlag" value="0">
                     <input type="hidden" name="device_mac" value="$(mac-esc)">
                     <input type="hidden" name="device_ip" value="$(ip)">
                     <input type="hidden" name="router" value="$(identity)">
@@ -561,7 +562,10 @@
             const mobileContinue = document.getElementById("mobileContinue");
             const paymentForm = document.getElementById("paymentForm");
             const selectedPackageInput = document.getElementById("selectedPackage");
+            const mockSuccessFlag = document.getElementById("mockSuccessFlag");
             const packageDisplay = document.getElementById("packageDisplay");
+
+            const isLocalMock = /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
 
             const usageMap = {
                 quick: { label: "Quick Tasks", meter: "20%", recommendation: "Trial 10 Minutes and 1 Hour Package are best for quick sessions." },
@@ -669,16 +673,22 @@
                     alert("Please enter phone number and select a package");
                     return;
                 }
+
+                if (!/^254\d{9}$/.test(phone)) {
+                    alert("Use phone format 2547XXXXXXXX");
+                    return;
+                }
+
+                if (mockSuccessFlag) {
+                    mockSuccessFlag.value = (isLocalMock && Number(selectedPlanData.price || 0) > 0) ? "1" : "0";
+                }
+
                 // Form will POST to M-Pesa API endpoint
                 this.submit();
             });
 
             pickUsage("quick");
             selectPlan(planButtons[0]);
-        })();
-    </script>
-</body>
-</html>
         })();
     </script>
 </body>

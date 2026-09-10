@@ -90,6 +90,13 @@ try {
             $mikrotikCredentials['password']
         );
 
+        // Keep account management in sync with paid hotspot flow.
+        syncBillingAccountFromPayment(
+            $paymentSession,
+            $mpesaReceiptNumber,
+            $transactionAmount
+        );
+
         $response = [
             'ResultCode' => 0,
             'ResultDesc' => 'Accepted',
@@ -292,4 +299,73 @@ function generatePassword($length = 12) {
         $password .= $chars[random_int(0, strlen($chars) - 1)];
     }
     return $password;
+}
+
+function syncBillingAccountFromPayment($paymentSession, $receipt, $amount)
+{
+    try {
+        $phone = preg_replace('/[^0-9]/', '', $paymentSession['phone'] ?? '');
+        if (!preg_match('/^254[0-9]{9}$/', $phone)) {
+            return;
+        }
+
+        $planName = trim($paymentSession['plan'] ?? '');
+        if ($planName === '') {
+            return;
+        }
+
+        $plan = ORM::for_table('tbl_plans')
+            ->where('name_plan', $planName)
+            ->where('type', 'Hotspot')
+            ->find_one();
+
+        if (!$plan) {
+            error_log('Daraja callback: no matching plan for ' . $planName);
+            return;
+        }
+
+        $customer = ORM::for_table('tbl_customers')
+            ->where('username', $phone)
+            ->where('service_type', 'Hotspot')
+            ->find_one();
+
+        $defaultPin = substr($phone, -4);
+
+        if (!$customer) {
+            $customer = ORM::for_table('tbl_customers')->create();
+            $customer->username = $phone;
+            $customer->password = $defaultPin;
+            $customer->pppoe_password = $defaultPin;
+            $customer->phonenumber = $phone;
+            $customer->fullname = 'Hotspot User ' . $phone;
+            $customer->email = 'paid_' . $phone . '@hotspot.local';
+            $customer->service_type = 'Hotspot';
+            $customer->account_type = 'Personal';
+            $customer->balance = 0;
+            $customer->status = 'Active';
+            $customer->created_by = 1;
+            $customer->created_at = date('Y-m-d H:i:s');
+            $customer->save();
+        }
+
+        $expiryTimestamp = strtotime('+' . (int)$plan['validity'] . ' ' . strtolower($plan['validity_unit']));
+
+        $recharge = ORM::for_table('tbl_user_recharges')->create();
+        $recharge->customer_id = $customer->id;
+        $recharge->username = $customer->username;
+        $recharge->plan_id = $plan->id;
+        $recharge->namebp = $plan->name_plan;
+        $recharge->recharged_on = date('Y-m-d');
+        $recharge->recharged_time = date('H:i:s');
+        $recharge->expiration = date('Y-m-d', $expiryTimestamp);
+        $recharge->time = date('H:i:s', $expiryTimestamp);
+        $recharge->status = 'on';
+        $recharge->method = 'M-Pesa ' . ($receipt ?: 'Callback');
+        $recharge->routers = $plan->routers;
+        $recharge->type = $plan->type;
+        $recharge->admin_id = 1;
+        $recharge->save();
+    } catch (Exception $e) {
+        error_log('Daraja callback billing sync failed: ' . $e->getMessage());
+    }
 }

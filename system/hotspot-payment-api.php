@@ -32,6 +32,41 @@ $response = [
     'timestamp' => date('Y-m-d H:i:s')
 ];
 
+$action = $_GET['action'] ?? $_POST['action'] ?? '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'status') {
+    $checkoutId = sanitize($_GET['checkout_id'] ?? '');
+    if (empty($checkoutId)) {
+        http_response_code(400);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'checkout_id is required'
+        ]);
+        exit;
+    }
+
+    $session = getHotspotPaymentStatusByCheckoutId($checkoutId);
+    if (!$session) {
+        http_response_code(404);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Payment session not found'
+        ]);
+        exit;
+    }
+
+    echo json_encode([
+        'status' => 'success',
+        'checkout_id' => $checkoutId,
+        'payment_status' => $session['status'],
+        'username' => $session['hotspot_username'] ?? '',
+        'password' => $session['hotspot_password'] ?? '',
+        'failure_reason' => $session['failure_reason'] ?? '',
+        'updated_at' => $session['updated_at'] ?? null
+    ]);
+    exit;
+}
+
 // Only accept POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -68,6 +103,10 @@ try {
     $duration = sanitize($packageData['duration']);
     $system = sanitize($packageData['system'] ?? 'unlimited');
     $usage = sanitize($packageData['usage'] ?? 'General');
+    $mockSuccessRequested = isMockModeEnabled() && (
+        (($_POST['mock_success'] ?? '0') === '1') ||
+        (($_GET['mock'] ?? '0') === '1')
+    );
 
     // ============================================
     // TRIAL PACKAGE - NO PAYMENT REQUIRED
@@ -81,7 +120,7 @@ try {
     // ============================================
     // PAID PACKAGE - DARAJA M-PESA PAYMENT
     // ============================================
-    $response = initiateM_PesaPayment($phone, $price, $plan, $duration, $deviceMac, $deviceIp, $router, $system);
+    $response = initiateM_PesaPayment($phone, $price, $plan, $duration, $deviceMac, $deviceIp, $router, $system, $mockSuccessRequested);
 
 } catch (Exception $e) {
     http_response_code(400);
@@ -156,7 +195,7 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
 /**
  * Initiate M-Pesa Daraja STK Push for payment
  */
-function initiateM_PesaPayment($phone, $amount, $plan, $duration, $mac, $ip, $router, $system) {
+function initiateM_PesaPayment($phone, $amount, $plan, $duration, $mac, $ip, $router, $system, $forceMockSuccess = false) {
     
     try {
         // Get Daraja credentials from config/database
@@ -177,6 +216,11 @@ function initiateM_PesaPayment($phone, $amount, $plan, $duration, $mac, $ip, $ro
         $reference = 'WIFI_' . time() . '_' . strtolower(substr(str_replace(':', '', $mac), -4));
         $timestamp = date('YmdHis');
         $password = base64_encode($daraja['shortcode'] . $daraja['passkey'] . $timestamp);
+        $callbackUrl = resolveCallbackUrl();
+
+        if ($forceMockSuccess) {
+            return runMockSuccessfulPayment($phone, $amount, $plan, $duration, $reference, $mac, $ip, $system, $callbackUrl);
+        }
         
         // Prepare STK Push payload
         $payload = [
@@ -188,7 +232,7 @@ function initiateM_PesaPayment($phone, $amount, $plan, $duration, $mac, $ip, $ro
             'PartyA' => $phone,
             'PartyB' => $daraja['shortcode'],
             'PhoneNumber' => $phone,
-            'CallBackURL' => 'https://network.apperstar.dev/api/daraja-callback.php',
+            'CallBackURL' => $callbackUrl,
             'AccountReference' => $reference,
             'TransactionDesc' => 'WiFi: ' . $plan . ' (' . $duration . ')'
         ];
@@ -237,6 +281,138 @@ function initiateM_PesaPayment($phone, $amount, $plan, $duration, $mac, $ip, $ro
             'type' => 'mpesa_error',
             'support' => 'info@apperstar.dev'
         ];
+    }
+}
+
+function isMockModeEnabled()
+{
+    global $config;
+
+    $host = strtolower($_SERVER['HTTP_HOST'] ?? '');
+    $isLocalHost = (strpos($host, 'localhost') === 0) || (strpos($host, '127.0.0.1') === 0);
+    $configEnabled = (($config['hotspot_mock_mode'] ?? '0') === '1');
+
+    return $isLocalHost || $configEnabled;
+}
+
+function resolveCallbackUrl()
+{
+    global $config;
+
+    if (!empty($config['mpesa_callback_url'])) {
+        return trim($config['mpesa_callback_url']);
+    }
+
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+    return $scheme . '://' . $host . '/system/daraja-callback.php';
+}
+
+function runMockSuccessfulPayment($phone, $amount, $plan, $duration, $reference, $mac, $ip, $system, $callbackUrl)
+{
+    $checkoutId = 'MOCKCHK_' . date('YmdHis') . '_' . random_int(1000, 9999);
+
+    storeHotspotPaymentSession($phone, $amount, $plan, $duration, $reference, $mac, $ip, $checkoutId, $system);
+
+    $mockPayload = [
+        'Body' => [
+            'stkCallback' => [
+                'MerchantRequestID' => 'mock_' . uniqid(),
+                'CheckoutRequestID' => $checkoutId,
+                'ResultCode' => 0,
+                'ResultDesc' => 'Mock success from staging mode',
+                'CallbackMetadata' => [
+                    'Item' => [
+                        ['Name' => 'Amount', 'Value' => $amount],
+                        ['Name' => 'MpesaReceiptNumber', 'Value' => 'MOCK' . random_int(100000, 999999)],
+                        ['Name' => 'TransactionDate', 'Value' => date('YmdHis')],
+                        ['Name' => 'PhoneNumber', 'Value' => (int) $phone],
+                    ]
+                ]
+            ]
+        ]
+    ];
+
+    $callbackResult = dispatchMockCallback($callbackUrl, $mockPayload);
+    $paymentState = getHotspotPaymentStatusByCheckoutId($checkoutId);
+
+    if (!$paymentState || ($paymentState['status'] ?? '') !== 'completed') {
+        throw new Exception('Mock callback did not complete payment session');
+    }
+
+    return [
+        'status' => 'success',
+        'message' => 'Mock payment completed (staging). User can be connected now.',
+        'type' => 'mpesa_success',
+        'package' => $plan,
+        'amount' => $amount . ' KES',
+        'duration' => $duration,
+        'system' => $system,
+        'phone' => $phone,
+        'reference' => $reference,
+        'checkout_id' => $checkoutId,
+        'username' => $paymentState['hotspot_username'] ?? '',
+        'password' => $paymentState['hotspot_password'] ?? '',
+        'callback_url' => $callbackUrl,
+        'callback_result' => $callbackResult
+    ];
+}
+
+function dispatchMockCallback($callbackUrl, $payload)
+{
+    $ch = curl_init($callbackUrl);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 8,
+        CURLOPT_TIMEOUT => 20,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_POSTFIELDS => json_encode($payload),
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => false,
+    ]);
+
+    $raw = curl_exec($ch);
+    $curlError = curl_error($ch);
+    $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($raw === false) {
+        throw new Exception('Mock callback request failed: ' . $curlError);
+    }
+
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) {
+        throw new Exception('Mock callback returned invalid JSON');
+    }
+
+    if ($statusCode >= 400 || ((int)($decoded['ResultCode'] ?? 1) !== 0)) {
+        $reason = $decoded['ResultDesc'] ?? ('HTTP ' . $statusCode);
+        throw new Exception('Mock callback rejected: ' . $reason);
+    }
+
+    return $decoded;
+}
+
+function getHotspotPaymentStatusByCheckoutId($checkoutId)
+{
+    global $_DB;
+
+    try {
+        $stmt = $_DB->prepare('SELECT checkout_id,status,hotspot_username,hotspot_password,failure_reason,updated_at FROM hotspot_payment_sessions WHERE checkout_id = ? LIMIT 1');
+        if (!$stmt) {
+            return null;
+        }
+
+        $stmt->bind_param('s', $checkoutId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        return $result ? $result->fetch_assoc() : null;
+    } catch (Exception $e) {
+        error_log('Failed to get payment status: ' . $e->getMessage());
+        return null;
     }
 }
 
