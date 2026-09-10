@@ -122,7 +122,7 @@ try {
     // ============================================
     $response = initiateM_PesaPayment($phone, $price, $plan, $duration, $deviceMac, $deviceIp, $router, $system, $mockSuccessRequested);
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
     http_response_code(400);
     $response['message'] = $e->getMessage();
     $response['error_code'] = 'INVALID_REQUEST';
@@ -136,8 +136,6 @@ echo json_encode($response);
  * Trial accounts expire after specified duration
  */
 function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
-    global $_DB;
-    
     try {
         // Clean phone number
         $phone = preg_replace('/[^0-9]/', '', $phone);
@@ -182,7 +180,7 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
             'phone_for_purchase' => $phone
         ];
         
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         return [
             'status' => 'error',
             'message' => 'Failed to create trial access: ' . $e->getMessage(),
@@ -274,7 +272,7 @@ function initiateM_PesaPayment($phone, $amount, $plan, $duration, $mac, $ip, $ro
             'support' => 'Contact: info@apperstar.dev | WhatsApp: https://wa.link/0sib65'
         ];
         
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         return [
             'status' => 'error',
             'message' => $e->getMessage(),
@@ -397,20 +395,13 @@ function dispatchMockCallback($callbackUrl, $payload)
 
 function getHotspotPaymentStatusByCheckoutId($checkoutId)
 {
-    global $_DB;
-
     try {
-        $stmt = $_DB->prepare('SELECT checkout_id,status,hotspot_username,hotspot_password,failure_reason,updated_at FROM hotspot_payment_sessions WHERE checkout_id = ? LIMIT 1');
-        if (!$stmt) {
-            return null;
-        }
+        $session = ORM::for_table('hotspot_payment_sessions')
+            ->where('checkout_id', $checkoutId)
+            ->find_one();
 
-        $stmt->bind_param('s', $checkoutId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        return $result ? $result->fetch_assoc() : null;
-    } catch (Exception $e) {
+        return $session ? $session->as_array() : null;
+    } catch (Throwable $e) {
         error_log('Failed to get payment status: ' . $e->getMessage());
         return null;
     }
@@ -421,20 +412,22 @@ function getHotspotPaymentStatusByCheckoutId($checkoutId)
  * Get Daraja M-Pesa Configuration from database
  */
 function getDarajaConfig() {
-    global $_DB;
-    
     try {
-        // Query config table for M-Pesa settings
         $settings = [];
         $keys = ['mpesa_consumer_key', 'mpesa_consumer_secret', 'mpesa_shortcode', 'mpesa_passkey', 'mpesa_env'];
-        
+
+        $rows = ORM::for_table('tbl_appconfig')
+            ->where_in('setting', $keys)
+            ->find_many();
+
+        foreach ($rows as $row) {
+            $settings[$row['setting']] = $row['value'];
+        }
+
         foreach ($keys as $key) {
-            $stmt = $_DB->prepare("SELECT value FROM tbl_appconfig WHERE setting = ?");
-            $stmt->bind_param('s', $key);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $row = $result->fetch_assoc();
-            $settings[$key] = $row ? $row['value'] : '';
+            if (!isset($settings[$key])) {
+                $settings[$key] = '';
+            }
         }
         
         // Validate required settings
@@ -451,7 +444,7 @@ function getDarajaConfig() {
             'env' => $settings['mpesa_env'] ?? 'sandbox'
         ];
         
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         return null;
     }
 }
@@ -461,34 +454,29 @@ function getDarajaConfig() {
  * Store hotspot payment session for tracking
  */
 function storeHotspotPaymentSession($phone, $amount, $plan, $duration, $reference, $mac, $ip, $checkoutId, $system) {
-    global $_DB;
-    
     try {
-        // Create or update payment session
-        $stmt = $_DB->prepare("
-            INSERT INTO hotspot_payment_sessions 
-            (phone, amount, plan, duration, reference, mac_address, ip_address, checkout_id, system, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
-            ON DUPLICATE KEY UPDATE
-            status = 'pending', updated_at = NOW()
-        ");
-        
-        if ($stmt) {
-            $stmt->bind_param(
-                'sisssssss',
-                $phone,
-                $amount,
-                $plan,
-                $duration,
-                $reference,
-                $mac,
-                $ip,
-                $checkoutId,
-                $system
-            );
-            $stmt->execute();
+        $session = ORM::for_table('hotspot_payment_sessions')
+            ->where('checkout_id', $checkoutId)
+            ->find_one();
+
+        if (!$session) {
+            $session = ORM::for_table('hotspot_payment_sessions')->create();
+            $session->created_at = date('Y-m-d H:i:s');
         }
-    } catch (Exception $e) {
+
+        $session->phone = $phone;
+        $session->amount = $amount;
+        $session->plan = $plan;
+        $session->duration = $duration;
+        $session->reference = $reference;
+        $session->mac_address = $mac;
+        $session->ip_address = $ip;
+        $session->checkout_id = $checkoutId;
+        $session->system = $system;
+        $session->status = 'pending';
+        $session->updated_at = date('Y-m-d H:i:s');
+        $session->save();
+    } catch (Throwable $e) {
         // Log error but don't fail the request
         error_log('Failed to store payment session: ' . $e->getMessage());
     }

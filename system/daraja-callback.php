@@ -141,7 +141,7 @@ try {
         ];
     }
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
     error_log('Daraja callback error: ' . $e->getMessage());
     $response['ResultDesc'] = $e->getMessage();
 }
@@ -153,19 +153,14 @@ echo json_encode($response);
  * Find payment session by checkout ID
  */
 function findPaymentSession($checkoutId) {
-    global $_DB;
-    
     try {
-        $stmt = $_DB->prepare("
-            SELECT * FROM hotspot_payment_sessions 
-            WHERE checkout_id = ? AND status = 'pending'
-            LIMIT 1
-        ");
-        $stmt->bind_param('s', $checkoutId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_assoc();
-    } catch (Exception $e) {
+        $session = ORM::for_table('hotspot_payment_sessions')
+            ->where('checkout_id', $checkoutId)
+            ->where('status', 'pending')
+            ->find_one();
+
+        return $session ? $session->as_array() : null;
+    } catch (Throwable $e) {
         error_log('Failed to find payment session: ' . $e->getMessage());
         return null;
     }
@@ -201,7 +196,7 @@ function createMikrotikUserForPayment($phone, $plan, $duration, $mac, $ip, $syst
             'duration' => $duration
         ];
         
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         error_log('Failed to create MikroTik user: ' . $e->getMessage());
         return null;
     }
@@ -212,34 +207,25 @@ function createMikrotikUserForPayment($phone, $plan, $duration, $mac, $ip, $syst
  * Mark payment as completed
  */
 function markPaymentAsCompleted($checkoutId, $receipt, $amount, $transactionDate, $username, $password) {
-    global $_DB;
-    
     try {
-        $stmt = $_DB->prepare("
-            UPDATE hotspot_payment_sessions
-            SET status = 'completed',
-                mpesa_receipt = ?,
-                transaction_date = ?,
-                transaction_amount = ?,
-                hotspot_username = ?,
-                hotspot_password = ?,
-                updated_at = NOW()
-            WHERE checkout_id = ?
-        ");
-        
-        $stmt->bind_param(
-            'ssssss',
-            $receipt,
-            $transactionDate,
-            $amount,
-            $username,
-            $password,
-            $checkoutId
-        );
-        
-        $stmt->execute();
+        $session = ORM::for_table('hotspot_payment_sessions')
+            ->where('checkout_id', $checkoutId)
+            ->find_one();
+
+        if (!$session) {
+            return false;
+        }
+
+        $session->status = 'completed';
+        $session->mpesa_receipt = $receipt;
+        $session->transaction_date = $transactionDate;
+        $session->transaction_amount = $amount;
+        $session->hotspot_username = $username;
+        $session->hotspot_password = $password;
+        $session->updated_at = date('Y-m-d H:i:s');
+        $session->save();
         return true;
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         error_log('Failed to mark payment completed: ' . $e->getMessage());
         return false;
     }
@@ -250,21 +236,21 @@ function markPaymentAsCompleted($checkoutId, $receipt, $amount, $transactionDate
  * Mark payment as failed
  */
 function markPaymentAsFailed($checkoutId, $reason) {
-    global $_DB;
-    
     try {
-        $stmt = $_DB->prepare("
-            UPDATE hotspot_payment_sessions
-            SET status = 'failed',
-                failure_reason = ?,
-                updated_at = NOW()
-            WHERE checkout_id = ?
-        ");
-        
-        $stmt->bind_param('ss', $reason, $checkoutId);
-        $stmt->execute();
+        $session = ORM::for_table('hotspot_payment_sessions')
+            ->where('checkout_id', $checkoutId)
+            ->find_one();
+
+        if (!$session) {
+            return false;
+        }
+
+        $session->status = 'failed';
+        $session->failure_reason = $reason;
+        $session->updated_at = date('Y-m-d H:i:s');
+        $session->save();
         return true;
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         error_log('Failed to mark payment failed: ' . $e->getMessage());
         return false;
     }
@@ -365,7 +351,7 @@ function syncBillingAccountFromPayment($paymentSession, $receipt, $amount)
         $recharge->type = $plan->type;
         $recharge->admin_id = 1;
         $recharge->save();
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         error_log('Daraja callback billing sync failed: ' . $e->getMessage());
     }
 }
