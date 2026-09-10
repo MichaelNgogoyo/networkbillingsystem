@@ -3,837 +3,693 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hostel Wifi - Sign In</title>
+    <title>Hostel WiFi Access</title>
     <style>
+        :root {
+            --bg-a: #0d1528;
+            --bg-b: #1b2b50;
+            --panel: rgba(13, 19, 35, 0.92);
+            --panel-soft: rgba(23, 35, 64, 0.82);
+            --line: rgba(255, 255, 255, 0.11);
+            --text: #f5f8ff;
+            --muted: #afbdd8;
+            --brand: #ffb74d;
+            --brand-2: #5de2cc;
+            --ok: #6de49d;
+            --warn: #ffdf6d;
+            --danger: #ff8f8f;
+            --radius: 18px;
+            --radius-lg: 24px;
+        }
+
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: 
-                linear-gradient(45deg, rgba(40,40,40,0.8), rgba(60,40,20,0.8)),
-                repeating-linear-gradient(90deg, 
-                    #3e2723 0px,
-                    #4e342e 2px,
-                    #5d4037 4px,
-                    #6d4c41 6px,
-                    #795548 8px,
-                    #8d6e63 10px);
-            background-size: cover;
-            background-attachment: fixed;
+            margin: 0;
             min-height: 100vh;
+            font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 15% 12%, rgba(93, 226, 204, 0.20), transparent 24%),
+                radial-gradient(circle at 85% 5%, rgba(255, 183, 77, 0.22), transparent 24%),
+                linear-gradient(140deg, var(--bg-a), var(--bg-b));
+            padding: 16px;
+        }
+
+        .wrap {
+            width: 100%;
+            max-width: 1220px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 16px;
+        }
+
+        .card {
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            background: var(--panel);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+        }
+
+        .left {
+            padding: 22px;
+        }
+
+        .right {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .brand {
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1000px;
-            width: 100%;
-        }
-
-        /* Header with logo */
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            color: white;
+            gap: 12px;
+            margin-bottom: 8px;
         }
 
         .logo {
-            font-size: 64px;
-            margin-bottom: 10px;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        .logo-subtitle {
-            font-size: 14px;
-            letter-spacing: 3px;
-            opacity: 0.9;
-        }
-
-        /* Two column layout */
-        .content {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            align-items: start;
+            place-items: center;
+            font-weight: 800;
+            color: #131313;
+            background: linear-gradient(135deg, var(--brand), var(--brand-2));
         }
 
-        /* Left side - Authentication forms */
-        .auth-section {
-            background: rgba(255, 255, 255, 0.95);
+        h1, h2, h3, p {
+            margin: 0;
+        }
+
+        .sub {
+            color: var(--muted);
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+
+        .usage-head {
+            margin-top: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .usage-row {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .usage-btn {
+            border: 1px solid var(--line);
             border-radius: 12px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            background: var(--panel-soft);
+            color: var(--text);
+            padding: 10px;
+            cursor: pointer;
+            font-size: 0.86rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .usage-btn.active {
+            border-color: rgba(93, 226, 204, 0.6);
+            background: rgba(93, 226, 204, 0.18);
+        }
+
+        .plans {
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .plan {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+            text-align: left;
+            color: var(--text);
+            padding: 12px;
+            cursor: pointer;
+            min-height: 122px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .plan.active {
+            border-color: rgba(255, 183, 77, 0.72);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24);
+        }
+
+        .plan.recommended::after {
+            content: "Recommended";
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 4px 7px;
+            border-radius: 999px;
+            font-size: 0.67rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #123;
+            background: var(--warn);
+        }
+
+        .plan-title {
+            font-weight: 800;
+            font-size: 0.98rem;
+            padding-right: 76px;
+        }
+
+        .plan-note {
+            color: var(--muted);
+            font-size: 0.83rem;
+            line-height: 1.4;
+            margin-top: 6px;
+        }
+
+        .price {
+            margin-top: 10px;
+            display: inline-flex;
+            width: fit-content;
+            border-radius: 999px;
+            padding: 6px 10px;
+            color: #1d1d1d;
+            background: linear-gradient(135deg, var(--brand), #ffe0b0);
+            font-size: 0.8rem;
+            font-weight: 800;
+        }
+
+        .price.free {
+            background: linear-gradient(135deg, var(--ok), #d5ffe2);
         }
 
         .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #e0e0e0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
         }
 
-        .tab-btn {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            background: none;
-            font-size: 16px;
-            font-weight: 600;
+        .tab {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel-soft);
+            color: var(--text);
+            padding: 11px;
+            font-weight: 800;
             cursor: pointer;
-            color: #999;
-            border-bottom: 3px solid transparent;
-            margin-bottom: -2px;
-            transition: all 0.3s;
         }
 
-        .tab-btn.active {
-            color: #1976d2;
-            border-bottom-color: #1976d2;
+        .tab.active {
+            color: #1d1d1d;
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--brand), #ffe0b0);
         }
 
-        .tab-btn:hover {
-            color: #333;
+        .pane {
+            display: none;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--panel-soft);
+            padding: 14px;
         }
 
-        .tab-content {
+        .pane.active {
+            display: block;
+        }
+
+        .field {
+            margin-bottom: 11px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 0.86rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .field input {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            padding: 12px;
+            outline: none;
+        }
+
+        .field input:focus {
+            border-color: rgba(93, 226, 204, 0.7);
+            box-shadow: 0 0 0 3px rgba(93, 226, 204, 0.18);
+        }
+
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 12px;
+            padding: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn.main {
+            background: linear-gradient(135deg, var(--brand), #ffe0b0);
+            color: #1c1c1c;
+        }
+
+        .btn.alt {
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+        }
+
+        .status {
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, 0.03);
+            padding: 14px;
+        }
+
+        .status h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .status p {
+            color: var(--muted);
+            font-size: 0.88rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .meter {
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            margin: 11px 0;
+            overflow: hidden;
+        }
+
+        .meter > span {
+            display: block;
+            height: 100%;
+            width: 12%;
+            background: linear-gradient(90deg, var(--brand-2), var(--brand));
+            transition: width 180ms ease;
+        }
+
+        .hint {
+            margin-top: 10px;
+            padding: 9px 11px;
+            border-radius: 12px;
+            font-size: 0.84rem;
+            line-height: 1.45;
+        }
+
+        .hint.ok {
+            color: #d8ffea;
+            border: 1px solid rgba(109, 228, 157, 0.3);
+            background: rgba(109, 228, 157, 0.12);
+        }
+
+        .hint.warn {
+            color: #fff8dc;
+            border: 1px solid rgba(255, 223, 109, 0.35);
+            background: rgba(255, 223, 109, 0.12);
+        }
+
+        .helper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+        .helper a {
+            color: #dde9ff;
+            text-decoration: none;
+        }
+
+        .mobile-cta {
             display: none;
         }
 
-        .tab-content.active {
-            display: block;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-            font-size: 14px;
-        }
-
-        input[type="text"],
-        input[type="email"],
-        input[type="password"],
-        input[type="tel"] {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        input[type="text"]:focus,
-        input[type="email"]:focus,
-        input[type="password"]:focus,
-        input[type="tel"]:focus {
-            outline: none;
-            border-color: #1976d2;
-            background: #f5f9ff;
-        }
-
-        .input-with-prefix {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .prefix {
-            background: #f0f0f0;
-            padding: 12px 15px;
-            border-radius: 8px;
-            font-weight: 600;
-            color: #666;
-            min-width: 80px;
-            text-align: center;
-        }
-
-        .input-with-prefix input {
-            flex: 1;
-        }
-
-        .forgot-link {
-            text-align: right;
-            font-size: 13px;
-        }
-
-        .forgot-link a {
-            color: #ff9800;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .forgot-link a:hover {
-            text-decoration: underline;
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 10px;
-        }
-
-        .submit-btn.signin {
-            background: #1976d2;
-            color: white;
-        }
-
-        .submit-btn.signin:hover {
-            background: #1565c0;
-        }
-
-        .submit-btn.register {
-            background: #ff5252;
-            color: white;
-        }
-
-        .submit-btn.register:hover {
-            background: #ff1744;
-        }
-
-        .submit-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .submit-btn.loading {
-            position: relative;
-            color: transparent;
-        }
-
-        .submit-btn.loading::after {
-            content: '';
-            position: absolute;
-            width: 16px;
-            height: 16px;
-            top: 50%;
-            left: 50%;
-            margin-left: -8px;
-            margin-top: -8px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 0.6s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Right side - Packages */
-        .packages-section {
-            color: white;
-        }
-
-        .packages-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .packages-subtitle {
-            text-align: center;
-            font-size: 14px;
-            margin-bottom: 30px;
-            opacity: 0.9;
-        }
-
-        .packages-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .package {
-            padding: 16px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 15px;
-            border: 2px solid transparent;
-        }
-
-        .package:hover {
-            transform: translateX(5px);
-            filter: brightness(1.1);
-        }
-
-        .package.trial {
-            background: linear-gradient(135deg, #a855f7, #9333ea);
-        }
-
-        .package.hourly {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-        }
-
-        .package.daily {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-        }
-
-        .package.premium {
-            background: linear-gradient(135deg, #10b981, #059669);
-        }
-
-        .package.unlimited {
-            background: linear-gradient(135deg, #ec4899, #db2777);
-        }
-
-        .call-btn {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid white;
-            background: transparent;
-            color: white;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: all 0.3s;
-        }
-
-        .call-btn:hover {
-            background: white;
-            color: #333;
-        }
-
-        .footer {
-            text-align: center;
-            color: white;
-            margin-top: 30px;
-            font-size: 12px;
-            opacity: 0.8;
-        }
-
-        .message {
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            font-size: 14px;
-            text-align: center;
-        }
-
-        .message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .message.info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        .credentials-display {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            margin-top: 20px;
-        }
-
-        .credentials-display h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        .credential-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .credential-row:last-child {
-            border-bottom: none;
-        }
-
-        .credential-label {
-            color: #666;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .credential-value {
-            color: #1976d2;
-            font-weight: bold;
-            font-size: 15px;
-            font-family: 'Courier New', monospace;
-        }
-
-        .refresh-btn {
-            width: 100%;
-            padding: 12px;
-            background: #ff9800;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 15px;
-        }
-
-        .refresh-btn:hover {
-            background: #f57c00;
-        }
-
-        .sync-status {
-            background: #fff3cd;
-            color: #856404;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            margin-top: 10px;
-            text-align: center;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .content {
+        @media (max-width: 980px) {
+            .wrap {
                 grid-template-columns: 1fr;
             }
-
-            .logo {
-                font-size: 48px;
+            .plans {
+                grid-template-columns: 1fr;
             }
-
-            .auth-section {
-                padding: 30px 20px;
+            .usage-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
+        }
 
-            .packages-title {
-                font-size: 20px;
+        @media (max-width: 640px) {
+            body {
+                padding: 10px;
             }
-
-            .package {
-                font-size: 14px;
-                padding: 14px 16px;
+            .left, .right {
+                padding: 14px;
+            }
+            .btn-row, .tabs {
+                grid-template-columns: 1fr;
+            }
+            .mobile-cta {
+                display: block;
+                position: sticky;
+                bottom: 10px;
+                margin-top: 12px;
+                border: 1px solid var(--line);
+                border-radius: 14px;
+                background: rgba(13, 19, 35, 0.95);
+                padding: 10px;
+                backdrop-filter: blur(8px);
+            }
+            .mobile-cta .btn {
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <div class="logo">H</div>
-            <div class="logo-subtitle">HOSTEL WIFI</div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="content">
-            <!-- Left: Auth Section -->
-            <div class="auth-section">
-                <div class="tabs">
-                    <button class="tab-btn active" onclick="switchTab('signin')">Sign In</button>
-                    <button class="tab-btn" onclick="switchTab('register')">Register</button>
-                </div>
-
-                <!-- Sign In Tab -->
-                <div id="signin" class="tab-content active">
-                    <div id="signin-message"></div>
-                    <form onsubmit="handleSignIn(event)">
-                        <div class="form-group">
-                            <label>Phone Number</label>
-                            <div class="input-with-prefix">
-                                <div class="prefix">+254</div>
-                                <input type="tel" id="signin-phone" placeholder="712345678" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>PIN Code</label>
-                            <input type="password" id="signin-pin" placeholder="Enter your 4-digit PIN" required>
-                            <div class="forgot-link">
-                                <a href="#" onclick="alert('Please contact support'); return false;">Forgot PIN?</a>
-                            </div>
-                        </div>
-                        <button type="submit" class="submit-btn signin">Sign In</button>
-                    </form>
-                </div>
-
-                <!-- Register Tab -->
-                <div id="register" class="tab-content">
-                    <div id="register-message"></div>
-                    <form onsubmit="handleRegister(event)">
-                        <div class="form-group">
-                            <label>Phone Number</label>
-                            <div class="input-with-prefix">
-                                <div class="prefix">+254</div>
-                                <input type="tel" id="register-phone" placeholder="712345678" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Create PIN (4 digits)</label>
-                            <input type="password" id="register-pin" placeholder="Enter 4-digit PIN" minlength="4" maxlength="4" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Referral Code (Optional)</label>
-                            <input type="text" id="referral-code" placeholder="Enter referral code if you have one">
-                        </div>
-                        <button type="submit" class="submit-btn register">Register & Get Trial</button>
-                    </form>
+    <div class="wrap">
+        <section class="card left">
+            <div class="brand">
+                <div class="logo">HS</div>
+                <div>
+                    <h1>Connect to Hostel WiFi</h1>
+                    <p class="sub">Pick your usage style, choose a package, then login to connect.</p>
                 </div>
             </div>
 
-            <!-- Right: Packages Section -->
-            <div class="packages-section">
-                <div class="packages-title">Choose Your Plan</div>
-                <div class="packages-subtitle">Access fast and affordable packages</div>
-                
-                <div class="packages-list">
-                    <!-- Trial -->
-                    <div class="package trial" onclick="selectPackage('trial')">
-                        🎁 TRIAL - 10 MINUTES UNLIMITED @FREE (New users only)</div>
+            <div class="usage-head">
+                <h2 style="font-size: 1.04rem;">How will you use internet today?</h2>
+                <p style="color: var(--muted); font-size: 0.84rem;">Auto recommendation enabled</p>
+            </div>
 
-                    <!-- Hourly -->
-                    <div class="package hourly" onclick="selectPackage('1hour')">
-                        ⚡ 1 HOUR UNLIMITED @20/-</div>
-                    <div class="package hourly" onclick="selectPackage('4hours')">
-                        ⚡ 4 HOURS UNLIMITED @60/-</div>
-                    <div class="package hourly" onclick="selectPackage('8hours')">
-                        ⚡ 8 HOURS UNLIMITED @100/-</div>
-                    <div class="package hourly" onclick="selectPackage('12hours')">
-                        ⚡ 12 HOURS UNLIMITED @120/-</div>
+            <div class="usage-row" id="usageRow">
+                <button class="usage-btn active" type="button" data-usage="quick">Quick Tasks</button>
+                <button class="usage-btn" type="button" data-usage="study">Study and Work</button>
+                <button class="usage-btn" type="button" data-usage="social">Social and Video</button>
+                <button class="usage-btn" type="button" data-usage="heavy">Heavy Streaming</button>
+            </div>
 
-                    <!-- Daily -->
-                    <div class="package daily" onclick="selectPackage('daily')">
-                        🔥 DAILY UNLIMITED @30/-</div>
+            <div class="plans" id="plans">
+                <button class="plan" type="button" data-plan="Trial 10 Minutes" data-system="TEST-10M" data-price="0" data-duration="10 mins" data-usage="quick" data-note="Try hotspot before buying">
+                    <div>
+                        <div class="plan-title">Trial 10 Minutes</div>
+                        <div class="plan-note">Free test access then return to packages.</div>
+                    </div>
+                    <span class="price free">Free</span>
+                </button>
+                <button class="plan" type="button" data-plan="1 Hour Package" data-system="1H" data-price="10" data-duration="1 hour" data-usage="quick" data-note="Fast, low cost option">
+                    <div>
+                        <div class="plan-title">1 Hour Package</div>
+                        <div class="plan-note">Best for quick tasks and browsing.</div>
+                    </div>
+                    <span class="price">10 shs</span>
+                </button>
+                <button class="plan" type="button" data-plan="4 Hours Package" data-system="4H" data-price="20" data-duration="4 hours" data-usage="study" data-note="Stable for classes and assignments">
+                    <div>
+                        <div class="plan-title">4 Hours Package</div>
+                        <div class="plan-note">Good for research and coursework.</div>
+                    </div>
+                    <span class="price">20 shs</span>
+                </button>
+                <button class="plan" type="button" data-plan="8 Hours Package" data-system="8H" data-price="30" data-duration="8 hours" data-usage="study" data-note="Workday coverage">
+                    <div>
+                        <div class="plan-title">8 Hours Package</div>
+                        <div class="plan-note">Strong value for full-day use.</div>
+                    </div>
+                    <span class="price">30 shs</span>
+                </button>
+                <button class="plan" type="button" data-plan="12 Hours Package" data-system="12H" data-price="40" data-duration="12 hours" data-usage="social" data-note="Long session option">
+                    <div>
+                        <div class="plan-title">12 Hours Package</div>
+                        <div class="plan-note">Great for video classes and media.</div>
+                    </div>
+                    <span class="price">40 shs</span>
+                </button>
+                <button class="plan" type="button" data-plan="Daily Package" data-system="Daily" data-price="100" data-duration="1 day" data-usage="social" data-note="All-day internet access">
+                    <div>
+                        <div class="plan-title">Daily Package</div>
+                        <div class="plan-note">Single payment for full day use.</div>
+                    </div>
+                    <span class="price">100 shs</span>
+                </button>
+                <button class="plan" type="button" data-plan="Weekly Package" data-system="Weekly" data-price="500" data-duration="7 days" data-usage="heavy" data-note="Reliable for regular users">
+                    <div>
+                        <div class="plan-title">Weekly Package</div>
+                        <div class="plan-note">Practical for repeat daily usage.</div>
+                    </div>
+                    <span class="price">500 shs</span>
+                </button>
+                <button class="plan" type="button" data-plan="Monthly Package" data-system="Monthly" data-price="1500" data-duration="30 days" data-usage="heavy" data-note="Best for long stay users">
+                    <div>
+                        <div class="plan-title">Monthly Package</div>
+                        <div class="plan-note">Lowest cost over long duration.</div>
+                    </div>
+                    <span class="price">1500 shs</span>
+                </button>
+            </div>
+        </section>
 
-                    <!-- Weekly -->
-                    <div class="package premium" onclick="selectPackage('weekly')">
-                        🌟 WEEKLY UNLIMITED @200/-</div>
+        <aside class="card right">
+            <div class="tabs">
+                <button class="tab active" type="button" data-tab="login">Login</button>
+                <button class="tab" type="button" data-tab="info">Info</button>
+            </div>
 
-                    <!-- Monthly -->
-                    <div class="package unlimited" onclick="selectPackage('monthly')">
-                        🚀 MONTHLY UNLIMITED @500/-</div>
-                </div>
+            <div class="pane active" id="loginPane">
+                <form method="post" action="/system/hotspot-payment-api.php" id="paymentForm">
+                    <input type="hidden" name="package" id="selectedPackage" value="">
+                    <input type="hidden" name="mock_success" id="mockSuccessFlag" value="0">
+                    <input type="hidden" name="device_mac" value="$(mac-esc)">
+                    <input type="hidden" name="device_ip" value="$(ip)">
+                    <input type="hidden" name="router" value="$(identity)">
+                    <input type="hidden" name="redirect_url" value="$(link-orig-url)">
 
-                <button class="call-btn">📞 Call Us for Support</button>
+                    <div class="field">
+                        <label for="phone">Phone Number (for M-Pesa)</label>
+                        <input type="tel" id="phone" name="phone" placeholder="254712345678" pattern="^254[0-9]{9}$" required autofocus>
+                    </div>
 
-                <div class="footer">
-                    Copyright © Hostel Wifi
+                    <div class="field">
+                        <label id="packageLabel">Selected Package: <strong id="packageDisplay">Trial 10 Minutes</strong></label>
+                    </div>
+
+                    <div class="btn-row">
+                        <button type="button" class="btn alt" id="backToInfo">Back</button>
+                        <button type="submit" class="btn main" id="payBtn">Pay & Connect</button>
+                    </div>
+                </form>
+
+                <div style="margin-top: 15px; padding: 10px; background: rgba(93, 226, 204, 0.1); border-left: 3px solid #5de2cc; border-radius: 4px;">
+                    <p style="font-size: 0.85rem; color: var(--muted); margin: 0;">💡 <strong>Trial:</strong> 10 minutes free. After expiry, use your phone number to purchase a package.</p>
                 </div>
             </div>
-        </div>
 
-        <!-- Credentials Display (shown after signup/signin) -->
-        <div id="credentials-section" style="display: none; margin-top: 30px;">
-            <div class="credentials-display">
-                <h3>✓ Your WiFi Credentials</h3>
-                <div class="credential-row">
-                    <span class="credential-label">Username:</span>
-                    <span class="credential-value" id="cred-username">-</span>
+            <div class="pane" id="infoPane">
+                <section class="status">
+                    <h3>Your Selected Plan</h3>
+                    <p id="selectedText">Trial 10 Minutes selected (system: TEST-10M). Good for testing before purchase.</p>
+                    <div class="meter"><span id="meterBar"></span></div>
+                    <p id="suggestionText">Usage profile: Quick Tasks. You can change anytime before continue.</p>
+                    <div class="hint ok" id="hintBox">This account will be limited to one active device at a time.</div>
+                </section>
+
+                <section class="status" style="margin-top: 12px;">
+                    <h3>Network Info</h3>
+                    <p>Your IP: $(ip)</p>
+                    <p>MAC Address: $(mac)</p>
+                    <p>Router: $(identity)</p>
+                </section>
+
+                <div class="helper">
+                    <a href="mailto:info@apperstar.dev">Support: info@apperstar.dev</a>
                 </div>
-                <div class="credential-row">
-                    <span class="credential-label">Password:</span>
-                    <span class="credential-value" id="cred-password">Preparing...</span>
+
+                <div class="btn-row">
+                    <button type="button" class="btn alt" style="visibility: hidden;"></button>
+                    <button type="button" class="btn main" id="goToLogin">Continue to Login</button>
                 </div>
-                <div class="credential-row">
-                    <span class="credential-label">Plan:</span>
-                    <span class="credential-value" id="cred-plan">-</span>
-                </div>
-                <div class="sync-status" id="sync-status" style="display: none;">
-                    ⏳ Password being prepared (1-2 minutes). We'll auto-refresh...
-                </div>
-                <button type="button" class="refresh-btn" onclick="checkPassword()">🔄 Refresh Password</button>
             </div>
-        </div>
+
+            <div class="mobile-cta">
+                <button class="btn main" type="button" id="mobileContinue">Continue to Login</button>
+            </div>
+        </aside>
     </div>
 
     <script>
-        const API_BASE = getApiUrl();
-        let authenticatedPhone = null;
-        let authenticatedPin = null;
-        let selectedPackage = null;
+        (function() {
+            const usageButtons = document.querySelectorAll(".usage-btn");
+            const planButtons = document.querySelectorAll(".plan");
+            const tabs = document.querySelectorAll(".tab");
+            const loginPane = document.getElementById("loginPane");
+            const infoPane = document.getElementById("infoPane");
 
-        // Log page info for debugging
-        console.log('🌐 Page loaded from:', window.location.href);
-        console.log('📡 API Endpoint:', API_BASE);
+            const selectedText = document.getElementById("selectedText");
+            const suggestionText = document.getElementById("suggestionText");
+            const meterBar = document.getElementById("meterBar");
+            const hintBox = document.getElementById("hintBox");
 
-        function getApiUrl() {
-            // Always use the production API domain for reliability
-            // This works from both local MikroTik and remote connections
-            return 'https://network.apperstar.dev/system/hotspot-simple-api.php';
-        }
+            const backToInfo = document.getElementById("backToInfo");
+            const goToLogin = document.getElementById("goToLogin");
+            const mobileContinue = document.getElementById("mobileContinue");
+            const paymentForm = document.getElementById("paymentForm");
+            const selectedPackageInput = document.getElementById("selectedPackage");
+            const mockSuccessFlag = document.getElementById("mockSuccessFlag");
+            const packageDisplay = document.getElementById("packageDisplay");
 
-        function switchTab(tab) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            const isLocalMock = /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
 
-            // Show selected tab
-            document.getElementById(tab).classList.add('active');
-            event.target.classList.add('active');
-
-            // Clear messages
-            document.getElementById('signin-message').innerHTML = '';
-            document.getElementById('register-message').innerHTML = '';
-        }
-
-        function showMessage(elementId, message, type) {
-            const el = document.getElementById(elementId);
-            el.innerHTML = `<div class="message ${type}">${message}</div>`;
-        }
-
-        function handleSignIn(e) {
-            e.preventDefault();
-            const phone = '254' + document.getElementById('signin-phone').value;
-            const pin = document.getElementById('signin-pin').value;
-
-            console.log('📱 handleSignIn starting...');
-
-            if (!/^254[0-9]{9}$/.test(phone)) {
-                showMessage('signin-message', '❌ Phone format: +254 followed by 9 digits', 'error');
-                return;
-            }
-
-            const btn = e.target.querySelector('button');
-            btn.classList.add('loading');
-            btn.disabled = true;
-
-            console.log('📱 Signing in with phone:', phone);
-            console.log('📱 API Endpoint:', API_BASE);
-            console.log('📱 Sending: action=verify-pin&phone=' + phone + '&pin=' + pin);
-
-            fetch(API_BASE, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=verify-pin&phone=${phone}&pin=${pin}`,
-                mode: 'cors'
-            })
-            .then(r => {
-                console.log('📡 API Response status:', r.status, r.statusText);
-                if (!r.ok) throw new Error(`API Error: ${r.status}`);
-                return r.text().then(text => {
-                    console.log('📡 API Response body:', text);
-                    try {
-                        return JSON.parse(text);
-                    } catch(e) {
-                        console.error('❌ JSON Parse Error:', text);
-                        throw new Error('Invalid response from server');
-                    }
-                });
-            })
-            .then(data => {
-                console.log('✓ Parsed API response:', data);
-                btn.classList.remove('loading');
-                btn.disabled = false;
-
-                if (data && data.status === 'success') {
-                    console.log('✓ Sign in successful! Setting auth state...');
-                    authenticatedPhone = phone;
-                    authenticatedPin = pin;
-                    console.log('✓ Auth state saved:', { authenticatedPhone, authenticatedPin });
-                    showMessage('signin-message', '✓ PIN verified! Now select a package and click Connect', 'success');
-                    showPackageSelection();
-                } else {
-                    console.error('❌ Sign in failed:', data?.message || 'Unknown error');
-                    showMessage('signin-message', '❌ ' + (data?.message || 'Invalid credentials'), 'error');
-                }
-            })
-            .catch(err => {
-                console.error('❌ Sign In Error:', err);
-                btn.classList.remove('loading');
-                btn.disabled = false;
-                showMessage('signin-message', '❌ Error: ' + err.message, 'error');
-            });
-        }
-
-        function handleRegister(e) {
-            e.preventDefault();
-            const phone = '254' + document.getElementById('register-phone').value;
-            const pin = document.getElementById('register-pin').value;
-
-            console.log('📝 handleRegister starting...');
-
-            if (!/^254[0-9]{9}$/.test(phone)) {
-                showMessage('register-message', '❌ Phone format: +254 followed by 9 digits', 'error');
-                return;
-            }
-
-            if (pin.length !== 4 || !/^\d+$/.test(pin)) {
-                showMessage('register-message', '❌ PIN must be 4 digits', 'error');
-                return;
-            }
-
-            const btn = e.target.querySelector('button');
-            btn.classList.add('loading');
-            btn.disabled = true;
-
-            console.log('📝 Registering phone:', phone);
-            console.log('📝 API Endpoint:', API_BASE);
-            console.log('📝 Sending: action=create-user&phone=' + phone + '&pin=' + pin);
-
-            fetch(API_BASE, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=create-user&phone=${phone}&pin=${pin}`,
-                mode: 'cors'
-            })
-            .then(r => {
-                console.log('📡 API Response status:', r.status, r.statusText);
-                if (!r.ok) throw new Error(`API Error: ${r.status}`);
-                return r.text().then(text => {
-                    console.log('📡 API Response body:', text);
-                    try {
-                        return JSON.parse(text);
-                    } catch(e) {
-                        console.error('❌ JSON Parse Error:', text);
-                        throw new Error('Invalid response from server');
-                    }
-                });
-            })
-            .then(data => {
-                console.log('✓ Parsed API response:', data);
-                btn.classList.remove('loading');
-                btn.disabled = false;
-
-                if (data && data.status === 'success') {
-                    console.log('✓ Registration successful! Setting auth state...');
-                    authenticatedPhone = phone;
-                    authenticatedPin = pin;
-                    console.log('✓ Auth state saved:', { authenticatedPhone, authenticatedPin });
-                    showMessage('register-message', '✓ Account created! Select a package and click Connect to continue', 'success');
-                    showPackageSelection();
-                } else {
-                    console.error('❌ Registration failed:', data?.message || 'Unknown error');
-                    showMessage('register-message', '❌ ' + (data?.message || 'Registration failed'), 'error');
-                }
-            })
-            .catch(err => {
-                console.error('❌ Register Error:', err);
-                btn.classList.remove('loading');
-                btn.disabled = false;
-                showMessage('register-message', '❌ Error: ' + err.message, 'error');
-            });
-        }
-
-        function selectPackage(packageName) {
-            console.log('🎯 selectPackage called:', {
-                packageName,
-                authenticatedPhone,
-                authenticatedPin,
-                selectedPackage
-            });
-
-            if (!authenticatedPhone || !authenticatedPin) {
-                const msg = '❌ Please sign in or register first to select a package';
-                console.error(msg);
-                alert(msg);
-                // Scroll back to auth section so user can sign in
-                document.querySelector('.auth-section').scrollIntoView({ behavior: 'smooth' });
-                return;
-            }
-
-            // Just select the package - don't connect yet
-            selectedPackage = packageName;
-            console.log('✓ Package selected:', packageName);
-            
-            // Highlight the selected package
-            document.querySelectorAll('.package').forEach(pkg => {
-                pkg.style.borderColor = 'transparent';
-                pkg.style.borderWidth = '2px';
-            });
-            event.target.style.borderColor = 'white';
-            event.target.style.borderWidth = '2px';
-            
-            // Show connect button
-            showConnectButton();
-        }
-
-        function showConnectButton() {
-            // Remove old connect button if exists
-            const oldBtn = document.getElementById('connect-btn');
-            if (oldBtn) oldBtn.remove();
-
-            // Create connect button
-            const connectBtn = document.createElement('button');
-            connectBtn.id = 'connect-btn';
-            connectBtn.className = 'submit-btn signin';
-            connectBtn.style.marginTop = '20px';
-            connectBtn.textContent = '🔗 Connect to WiFi';
-            connectBtn.onclick = connectToWiFi;
-
-            // Find packages section and add button
-            const packagesSection = document.querySelector('.packages-section');
-            packagesSection.appendChild(connectBtn);
-
-            // Scroll to button
-            setTimeout(() => connectBtn.scrollIntoView({ behavior: 'smooth' }), 100);
-        }
-
-        function connectToWiFi() {
-            if (!selectedPackage || !authenticatedPhone || !authenticatedPin) {
-                alert('Please select a package first');
-                return;
-            }
-
-            // Display credentials
-            document.getElementById('cred-username').textContent = authenticatedPhone;
-            document.getElementById('cred-password').textContent = authenticatedPin;
-            
-            // Map package names to friendly names
-            const packageNames = {
-                'trial': 'Trial - 10 Minutes',
-                '1hour': '1 Hour Unlimited',
-                '4hours': '4 Hours Unlimited',
-                '8hours': '8 Hours Unlimited',
-                '12hours': '12 Hours Unlimited',
-                'daily': 'Daily Unlimited',
-                'weekly': 'Weekly Unlimited',
-                'monthly': 'Monthly Unlimited'
+            const usageMap = {
+                quick: { label: "Quick Tasks", meter: "20%", recommendation: "Trial 10 Minutes and 1 Hour Package are best for quick sessions." },
+                study: { label: "Study and Work", meter: "45%", recommendation: "4 Hours Package or 8 Hours Package gives stable work coverage." },
+                social: { label: "Social and Video", meter: "65%", recommendation: "12 Hours Package or Daily Package fits heavier daytime use." },
+                heavy: { label: "Heavy Streaming", meter: "88%", recommendation: "Weekly Package or Monthly Package is the best value." }
             };
-            
-            document.getElementById('cred-plan').textContent = packageNames[selectedPackage] || selectedPackage;
-            document.getElementById('credentials-section').style.display = 'block';
 
-            // Scroll to credentials
-            document.getElementById('credentials-section').scrollIntoView({ behavior: 'smooth' });
-        }
+            let activeUsage = "quick";
+            let selectedPlanData = null;
 
-        function showPackageSelection() {
-            // Hide the tabs and show packages
-            document.querySelector('.tabs').style.display = 'none';
-            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-            
-            // Make packages section more prominent
-            const packagesSection = document.querySelector('.packages-section');
-            packagesSection.style.opacity = '1';
-            packagesSection.style.pointerEvents = 'auto';
-            
-            // Log state for debugging
-            console.log('✓ Auth successful - Packages now selectable');
-            console.log('  authenticatedPhone:', authenticatedPhone);
-            console.log('  Ready to select packages...');
-        }
+            function activateTab(tabName) {
+                tabs.forEach(tab => tab.classList.toggle("active", tab.dataset.tab === tabName));
+                loginPane.classList.toggle("active", tabName === "login");
+                infoPane.classList.toggle("active", tabName === "info");
+                
+                // Update form field when switching to login tab
+                if (tabName === "login" && selectedPlanData) {
+                    selectedPackageInput.value = JSON.stringify(selectedPlanData);
+                    packageDisplay.textContent = selectedPlanData.plan;
+                }
+            }
+
+            function pickUsage(usageType) {
+                activeUsage = usageType;
+                usageButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.usage === usageType));
+                planButtons.forEach(plan => {
+                    plan.classList.remove("recommended");
+                    if (plan.dataset.usage === usageType) {
+                        plan.classList.add("recommended");
+                    }
+                });
+                const info = usageMap[usageType];
+                meterBar.style.width = info.meter;
+                suggestionText.textContent = "Usage profile: " + info.label + ". " + info.recommendation;
+            }
+
+            function selectPlan(planButton) {
+                planButtons.forEach(plan => plan.classList.remove("active"));
+                planButton.classList.add("active");
+                
+                selectedPlanData = {
+                    plan: planButton.dataset.plan,
+                    system: planButton.dataset.system,
+                    price: planButton.dataset.price,
+                    duration: planButton.dataset.duration,
+                    note: planButton.dataset.note
+                };
+                
+                const planName = selectedPlanData.plan;
+                const price = selectedPlanData.price;
+                const duration = selectedPlanData.duration;
+                const note = selectedPlanData.note;
+                
+                selectedText.textContent = planName + " selected. Duration: " + duration + ". Price: " + (price === "0" ? "Free" : price + " shs") + ".";
+                if (price === "0") {
+                    hintBox.className = "hint warn";
+                    hintBox.textContent = "Trial is temporary. After expiry, reconnect and buy a paid package.";
+                } else {
+                    hintBox.className = "hint ok";
+                    hintBox.textContent = note + ". One device at a time.";
+                }
+                
+                packageDisplay.textContent = planName;
+                activateTab("info");
+            }
+
+            usageButtons.forEach(button => {
+                button.addEventListener("click", function() {
+                    pickUsage(this.dataset.usage);
+                });
+            });
+
+            planButtons.forEach(plan => {
+                plan.addEventListener("click", function() {
+                    selectPlan(this);
+                });
+            });
+
+            tabs.forEach(tab => {
+                tab.addEventListener("click", function() {
+                    activateTab(this.dataset.tab);
+                });
+            });
+
+            backToInfo.addEventListener("click", function() {
+                activateTab("info");
+            });
+
+            goToLogin.addEventListener("click", function() {
+                activateTab("login");
+                document.getElementById("phone").focus();
+            });
+
+            mobileContinue.addEventListener("click", function() {
+                activateTab("login");
+                document.getElementById("phone").focus();
+            });
+
+            // Handle form submission for M-Pesa Daraja
+            paymentForm.addEventListener("submit", function(e) {
+                e.preventDefault();
+                const phone = document.getElementById("phone").value;
+                if (!phone || !selectedPlanData) {
+                    alert("Please enter phone number and select a package");
+                    return;
+                }
+
+                if (!/^254\d{9}$/.test(phone)) {
+                    alert("Use phone format 2547XXXXXXXX");
+                    return;
+                }
+
+                if (mockSuccessFlag) {
+                    mockSuccessFlag.value = (isLocalMock && Number(selectedPlanData.price || 0) > 0) ? "1" : "0";
+                }
+
+                // Form will POST to M-Pesa API endpoint
+                this.submit();
+            });
+
+            pickUsage("quick");
+            selectPlan(planButtons[0]);
+        })();
     </script>
 </body>
 </html>

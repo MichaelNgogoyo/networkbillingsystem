@@ -90,6 +90,13 @@ try {
             $mikrotikCredentials['password']
         );
 
+        // Keep account management in sync with paid hotspot flow.
+        syncBillingAccountFromPayment(
+            $paymentSession,
+            $mpesaReceiptNumber,
+            $transactionAmount
+        );
+
         $response = [
             'ResultCode' => 0,
             'ResultDesc' => 'Accepted',
@@ -175,67 +182,15 @@ function createMikrotikUserForPayment($phone, $plan, $duration, $mac, $ip, $syst
     
     try {
         // Generate unique username
-        $username = 'paid_' . time();
+        $username = 'hotspot_' . time();
         $password = generatePassword(12);
         
         // Calculate expiry time based on duration
         $durationSeconds = parseDurationToSeconds($duration);
         $expiryTime = time() + $durationSeconds;
         
-        // Create user on MikroTik router
-        require_once(__DIR__ . '/autoload/Mikrotik.php');
-        
-        $routerIp = '192.168.88.1';
-        $routerPort = 8728;
-        $routerUser = 'admin';
-        $routerPass = '1234';
-        
-        // Try to get router config from database
-        $router = ORM::for_table('tbl_routers')->where('ip', '192.168.88.1')->find_one();
-        if ($router) {
-            $ipPort = $router['ip_port'] ?? '192.168.88.1:8728';
-            $parts = explode(':', $ipPort);
-            $routerIp = $parts[0];
-            $routerPort = isset($parts[1]) ? $parts[1] : 8728;
-            $routerUser = $router['username'] ?? 'admin';
-            $routerPass = $router['password'] ?? '1234';
-        }
-        
-        error_log('Creating paid MikroTik user: ' . $username . ' for plan: ' . $plan);
-        
-        $client = Mikrotik::getClient($routerIp . ':' . $routerPort, $routerUser, $routerPass);
-        
-        if ($client) {
-            // Ensure profile exists
-            $profileName = 'paid';
-            try {
-                Mikrotik::setHotspotPlan($client, $profileName, 0, '0/0');
-                error_log('Paid profile is ready: ' . $profileName);
-            } catch (Exception $e) {
-                error_log('Note: Could not create paid profile: ' . $e->getMessage());
-            }
-            
-            // Create user with the paid profile
-            $planData = [
-                'typebp' => 'Unlimited',
-                'name_plan' => $profileName
-            ];
-            $customer = [
-                'username' => $username,
-                'password' => $password,
-                'email' => $phone . '@hotspot.local',
-                'fullname' => 'Paid User - ' . $phone . ' - ' . $plan
-            ];
-            
-            Mikrotik::addHotspotUser($client, $planData, $customer);
-            error_log('MikroTik paid user created: ' . $username);
-            
-            // Login the user from server side
-            Mikrotik::logMeIn($client, $username, $password, $ip, $mac);
-            error_log('MikroTik paid user logged in: ' . $username);
-        } else {
-            error_log('WARNING: Could not connect to MikroTik for paid user');
-        }
+        // TODO: Create user on MikroTik router via system/autoload/Mikrotik.php
+        // For now, we'll prepare the credentials for storage
         
         return [
             'username' => $username,
@@ -247,7 +202,7 @@ function createMikrotikUserForPayment($phone, $plan, $duration, $mac, $ip, $syst
         ];
         
     } catch (Exception $e) {
-        error_log('Failed to create MikroTik paid user: ' . $e->getMessage());
+        error_log('Failed to create MikroTik user: ' . $e->getMessage());
         return null;
     }
 }
@@ -344,4 +299,73 @@ function generatePassword($length = 12) {
         $password .= $chars[random_int(0, strlen($chars) - 1)];
     }
     return $password;
+}
+
+function syncBillingAccountFromPayment($paymentSession, $receipt, $amount)
+{
+    try {
+        $phone = preg_replace('/[^0-9]/', '', $paymentSession['phone'] ?? '');
+        if (!preg_match('/^254[0-9]{9}$/', $phone)) {
+            return;
+        }
+
+        $planName = trim($paymentSession['plan'] ?? '');
+        if ($planName === '') {
+            return;
+        }
+
+        $plan = ORM::for_table('tbl_plans')
+            ->where('name_plan', $planName)
+            ->where('type', 'Hotspot')
+            ->find_one();
+
+        if (!$plan) {
+            error_log('Daraja callback: no matching plan for ' . $planName);
+            return;
+        }
+
+        $customer = ORM::for_table('tbl_customers')
+            ->where('username', $phone)
+            ->where('service_type', 'Hotspot')
+            ->find_one();
+
+        $defaultPin = substr($phone, -4);
+
+        if (!$customer) {
+            $customer = ORM::for_table('tbl_customers')->create();
+            $customer->username = $phone;
+            $customer->password = $defaultPin;
+            $customer->pppoe_password = $defaultPin;
+            $customer->phonenumber = $phone;
+            $customer->fullname = 'Hotspot User ' . $phone;
+            $customer->email = 'paid_' . $phone . '@hotspot.local';
+            $customer->service_type = 'Hotspot';
+            $customer->account_type = 'Personal';
+            $customer->balance = 0;
+            $customer->status = 'Active';
+            $customer->created_by = 1;
+            $customer->created_at = date('Y-m-d H:i:s');
+            $customer->save();
+        }
+
+        $expiryTimestamp = strtotime('+' . (int)$plan['validity'] . ' ' . strtolower($plan['validity_unit']));
+
+        $recharge = ORM::for_table('tbl_user_recharges')->create();
+        $recharge->customer_id = $customer->id;
+        $recharge->username = $customer->username;
+        $recharge->plan_id = $plan->id;
+        $recharge->namebp = $plan->name_plan;
+        $recharge->recharged_on = date('Y-m-d');
+        $recharge->recharged_time = date('H:i:s');
+        $recharge->expiration = date('Y-m-d', $expiryTimestamp);
+        $recharge->time = date('H:i:s', $expiryTimestamp);
+        $recharge->status = 'on';
+        $recharge->method = 'M-Pesa ' . ($receipt ?: 'Callback');
+        $recharge->routers = $plan->routers;
+        $recharge->type = $plan->type;
+        $recharge->admin_id = 1;
+        $recharge->save();
+    } catch (Exception $e) {
+        error_log('Daraja callback billing sync failed: ' . $e->getMessage());
+    }
 }
