@@ -139,43 +139,36 @@ function handleTrialPackage($phone, $plan, $mac, $ip, $duration, $system) {
     try {
         // Clean phone number
         $phone = preg_replace('/[^0-9]/', '', $phone);
-        
-        // Generate trial username: trial_[MAC_LAST_6]_[TIMESTAMP]
-        $macShort = strtolower(substr(str_replace(':', '', $mac), -6));
-        $trialUser = 'trial_' . $macShort . '_' . time();
-        $trialPass = generateSecurePassword(8);
+
+        // Use phone + default PIN so reconnect/login remains predictable.
+        $trialUser = $phone;
+        $trialPass = substr($phone, -4);
         
         // Parse duration to seconds
         $durationSeconds = parseDurationToSeconds($duration);
         $expiryTime = time() + $durationSeconds;
-        
-        // Create MikroTik user (this assumes Mikrotik.php class exists)
-        // For now, we'll just return the credentials
-        // TODO: Integrate with actual MikroTik API via system/autoload/Mikrotik.php
-        
-        $trialData = [
-            'phone' => $phone,
-            'username' => $trialUser,
-            'password' => $trialPass,
-            'mac' => $mac,
-            'ip' => $ip,
-            'plan' => $plan,
-            'system' => $system,
-            'expires_in' => $duration,
-            'created_at' => date('Y-m-d H:i:s'),
-            'expires_at' => date('Y-m-d H:i:s', $expiryTime)
-        ];
-        
-        // TODO: Store in database for tracking
+
+        $provisioned = provisionHotspotAccount(
+            $trialUser,
+            $trialPass,
+            $phone,
+            $plan,
+            $system,
+            'Trial'
+        );
+
+        $expiresAt = !empty($provisioned['expires_at'])
+            ? $provisioned['expires_at']
+            : date('Y-m-d H:i:s', $expiryTime);
         
         return [
             'status' => 'success',
             'message' => 'Trial access granted - enjoy ' . $duration . ' of free WiFi!',
             'type' => 'trial',
             'duration' => $duration,
-            'username' => $trialUser,
-            'password' => $trialPass,
-            'expires_at' => date('Y-m-d H:i:s', $expiryTime),
+            'username' => $provisioned['username'],
+            'password' => $provisioned['password'],
+            'expires_at' => $expiresAt,
             'next_step' => 'Login with these credentials. Access expires in ' . $duration . '.',
             'phone_for_purchase' => $phone
         ];
@@ -480,6 +473,115 @@ function storeHotspotPaymentSession($phone, $amount, $plan, $duration, $referenc
         // Log error but don't fail the request
         error_log('Failed to store payment session: ' . $e->getMessage());
     }
+}
+
+
+function provisionHotspotAccount($username, $password, $phone, $planName, $system, $gatewayLabel)
+{
+    $plan = findHotspotPlan($planName, $system);
+    if (!$plan) {
+        throw new Exception('Selected hotspot plan is not available');
+    }
+
+    $customer = ORM::for_table('tbl_customers')
+        ->where('username', $username)
+        ->where('service_type', 'Hotspot')
+        ->find_one();
+
+    if (!$customer) {
+        $customer = ORM::for_table('tbl_customers')->create();
+        $customer->username = $username;
+        $customer->fullname = 'Hotspot User ' . $phone;
+        $customer->email = 'hotspot_' . $phone . '@hotspot.local';
+        $customer->created_by = 1;
+        $customer->created_at = date('Y-m-d H:i:s');
+    }
+
+    $customer->password = $password;
+    $customer->pppoe_password = $password;
+    $customer->phonenumber = $phone;
+    $customer->service_type = 'Hotspot';
+    $customer->account_type = 'Personal';
+    $customer->balance = 0;
+    $customer->status = 'Active';
+    $customer->save();
+
+    $routerName = trim($plan['routers'] ?? '');
+    if ($routerName === '') {
+        $routerName = 'radius';
+    }
+
+    Package::rechargeUser(
+        (int) $customer->id,
+        $routerName,
+        (int) $plan['id'],
+        $gatewayLabel,
+        'Hotspot API'
+    );
+
+    $latestRecharge = ORM::for_table('tbl_user_recharges')
+        ->where('customer_id', (int) $customer->id)
+        ->where('plan_id', (int) $plan['id'])
+        ->order_by_desc('id')
+        ->find_one();
+
+    $expiresAt = null;
+    if ($latestRecharge) {
+        $expiresAt = trim(($latestRecharge['expiration'] ?? '') . ' ' . ($latestRecharge['time'] ?? ''));
+        if ($expiresAt === '') {
+            $expiresAt = null;
+        }
+    }
+
+    return [
+        'username' => $username,
+        'password' => $password,
+        'expires_at' => $expiresAt
+    ];
+}
+
+
+function findHotspotPlan($planName, $system = '')
+{
+    $plan = ORM::for_table('tbl_plans')
+        ->where('type', 'Hotspot')
+        ->where('name_plan', $planName)
+        ->find_one();
+
+    if ($plan) {
+        return $plan;
+    }
+
+    $normalizedPlanName = strtolower(preg_replace('/[^a-z0-9]+/', '', (string) $planName));
+    $normalizedSystem = strtolower(preg_replace('/[^a-z0-9]+/', '', (string) $system));
+
+    $plans = ORM::for_table('tbl_plans')
+        ->where('type', 'Hotspot')
+        ->find_many();
+
+    foreach ($plans as $candidate) {
+        $candidateName = strtolower(preg_replace('/[^a-z0-9]+/', '', (string) $candidate['name_plan']));
+        if ($candidateName === $normalizedPlanName || ($normalizedPlanName !== '' && strpos($candidateName, $normalizedPlanName) !== false)) {
+            return $candidate;
+        }
+    }
+
+    if ($normalizedSystem !== '') {
+        foreach ($plans as $candidate) {
+            $candidateName = strtolower((string) $candidate['name_plan']);
+            if (strpos($candidateName, $normalizedSystem) !== false) {
+                return $candidate;
+            }
+        }
+    }
+
+    foreach ($plans as $candidate) {
+        if (strpos(strtolower((string) $candidate['name_plan']), 'trial') !== false) {
+            return $candidate;
+        }
+    }
+
+    return null;
 }
 
 

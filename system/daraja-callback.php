@@ -90,13 +90,6 @@ try {
             $mikrotikCredentials['password']
         );
 
-        // Keep account management in sync with paid hotspot flow.
-        syncBillingAccountFromPayment(
-            $paymentSession,
-            $mpesaReceiptNumber,
-            $transactionAmount
-        );
-
         $response = [
             'ResultCode' => 0,
             'ResultDesc' => 'Accepted',
@@ -174,23 +167,92 @@ function findPaymentSession($checkoutId) {
  * Password: Random 12-character strong password
  */
 function createMikrotikUserForPayment($phone, $plan, $duration, $mac, $ip, $system) {
-    
     try {
-        // Generate unique username
-        $username = 'hotspot_' . time();
-        $password = generatePassword(12);
+        $phone = preg_replace('/[^0-9]/', '', (string) $phone);
+        if (!preg_match('/^254[0-9]{9}$/', $phone)) {
+            throw new Exception('Invalid phone for hotspot account provisioning');
+        }
+
+        $username = $phone;
+        $password = substr($phone, -4);
+
+        $planRow = ORM::for_table('tbl_plans')
+            ->where('type', 'Hotspot')
+            ->where('name_plan', trim((string) $plan))
+            ->find_one();
+
+        if (!$planRow) {
+            $normalizedRequested = strtolower(preg_replace('/[^a-z0-9]+/', '', trim((string) $plan)));
+            $allHotspotPlans = ORM::for_table('tbl_plans')->where('type', 'Hotspot')->find_many();
+            foreach ($allHotspotPlans as $candidatePlan) {
+                $candidateName = strtolower(preg_replace('/[^a-z0-9]+/', '', (string) $candidatePlan['name_plan']));
+                if ($candidateName === $normalizedRequested || ($normalizedRequested !== '' && strpos($candidateName, $normalizedRequested) !== false)) {
+                    $planRow = $candidatePlan;
+                    break;
+                }
+            }
+        }
+
+        if (!$planRow) {
+            throw new Exception('Hotspot plan not found for payment callback');
+        }
+
+        $customer = ORM::for_table('tbl_customers')
+            ->where('username', $username)
+            ->where('service_type', 'Hotspot')
+            ->find_one();
+
+        if (!$customer) {
+            $customer = ORM::for_table('tbl_customers')->create();
+            $customer->username = $username;
+            $customer->fullname = 'Hotspot User ' . $phone;
+            $customer->email = 'paid_' . $phone . '@hotspot.local';
+            $customer->created_by = 1;
+            $customer->created_at = date('Y-m-d H:i:s');
+        }
+
+        $customer->password = $password;
+        $customer->pppoe_password = $password;
+        $customer->phonenumber = $phone;
+        $customer->service_type = 'Hotspot';
+        $customer->account_type = 'Personal';
+        $customer->balance = 0;
+        $customer->status = 'Active';
+        $customer->save();
+
+        $routerName = trim((string) ($planRow['routers'] ?? ''));
+        if ($routerName === '') {
+            $routerName = 'radius';
+        }
+
+        Package::rechargeUser(
+            (int) $customer->id,
+            $routerName,
+            (int) $planRow['id'],
+            'M-Pesa',
+            'Daraja Callback'
+        );
+
+        $latestRecharge = ORM::for_table('tbl_user_recharges')
+            ->where('customer_id', (int) $customer->id)
+            ->where('plan_id', (int) $planRow['id'])
+            ->order_by_desc('id')
+            ->find_one();
         
-        // Calculate expiry time based on duration
         $durationSeconds = parseDurationToSeconds($duration);
         $expiryTime = time() + $durationSeconds;
-        
-        // TODO: Create user on MikroTik router via system/autoload/Mikrotik.php
-        // For now, we'll prepare the credentials for storage
+        $expiresAt = date('Y-m-d H:i:s', $expiryTime);
+        if ($latestRecharge) {
+            $candidateExpiry = trim(($latestRecharge['expiration'] ?? '') . ' ' . ($latestRecharge['time'] ?? ''));
+            if ($candidateExpiry !== '') {
+                $expiresAt = $candidateExpiry;
+            }
+        }
         
         return [
             'username' => $username,
             'password' => $password,
-            'expires_at' => date('Y-m-d H:i:s', $expiryTime),
+            'expires_at' => $expiresAt,
             'expiry_timestamp' => $expiryTime,
             'plan' => $plan,
             'duration' => $duration
