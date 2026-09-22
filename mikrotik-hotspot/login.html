@@ -178,7 +178,22 @@
 
         <div class="body">
             <div class="panel">
-                <h2>Login with Phone Number</h2>
+                <h2>Existing User Sign In</h2>
+                <p>If you already have a hotspot account, sign in directly.</p>
+
+                <form id="existingLoginForm" style="margin-bottom:12px;">
+                    <div class="field">
+                        <label for="existingUser">Username</label>
+                        <input type="text" id="existingUser" placeholder="e.g. 254712345678" required>
+                    </div>
+                    <div class="field">
+                        <label for="existingPass">Password</label>
+                        <input type="password" id="existingPass" placeholder="Your hotspot password" required>
+                    </div>
+                    <button type="submit" class="btn">Sign In</button>
+                </form>
+
+                <h2>Buy Package / Register</h2>
                 <p>Enter your M-Pesa phone number, choose a package, and continue.</p>
 
                 <div id="notice" class="msg info" style="display:none;"></div>
@@ -243,6 +258,9 @@
         (function () {
             const paymentForm = document.getElementById('paymentForm');
             const phoneInput = document.getElementById('phone');
+            const existingLoginForm = document.getElementById('existingLoginForm');
+            const existingUserInput = document.getElementById('existingUser');
+            const existingPassInput = document.getElementById('existingPass');
             const planSummary = document.getElementById('planSummary');
             const selectedPackageInput = document.getElementById('selectedPackage');
             const payBtn = document.getElementById('payBtn');
@@ -307,6 +325,20 @@
                 });
             });
 
+            existingLoginForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const username = String(existingUserInput.value || '').trim();
+                const password = String(existingPassInput.value || '').trim();
+
+                if (!username || !password) {
+                    showNotice('err', 'Enter both username and password to sign in.');
+                    return;
+                }
+
+                showNotice('info', 'Signing in...');
+                submitMikroTikLogin(username, password);
+            });
+
             paymentForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
                 clearPolling();
@@ -338,7 +370,7 @@
                     if ((data.type === 'trial' || data.type === 'mpesa_success') && data.username && data.password) {
                         hotspotUsername = data.username;
                         hotspotPassword = data.password;
-                        showCredentialsAndConnect('ok', data.message || 'Credentials ready. Click Connect Now.');
+                        onCredentialsReady(data.message || 'Credentials ready. Connecting now...');
                         return;
                     }
 
@@ -364,6 +396,13 @@
                 showNotice(type, message);
             }
 
+            function onCredentialsReady(message) {
+                showCredentialsAndConnect('ok', message);
+                setTimeout(function () {
+                    submitMikroTikLogin(hotspotUsername, hotspotPassword);
+                }, 900);
+            }
+
             function startPolling(checkoutId) {
                 pollCount = 0;
                 pollTimer = setInterval(async function () {
@@ -383,7 +422,7 @@
                             hotspotUsername = data.username;
                             hotspotPassword = data.password;
                             clearPolling();
-                            showCredentialsAndConnect('ok', 'Payment confirmed. Click Connect Now.');
+                            onCredentialsReady('Payment confirmed. Connecting now...');
                         } else if (data.payment_status === 'failed') {
                             clearPolling();
                             showNotice('err', data.failure_reason || 'Payment failed. Please try again.');

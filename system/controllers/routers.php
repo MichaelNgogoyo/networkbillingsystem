@@ -61,6 +61,7 @@ switch ($action) {
         $password = _post('password');
         $description = _post('description');
         $enabled = _post('enabled');
+        $testWarning = '';
 
         $msg = '';
         if (Validator::Length($name, 30, 1) == false) {
@@ -83,7 +84,11 @@ switch ($action) {
         if ($msg == '') {
             run_hook('add_router'); #HOOK
             if (_post("testIt")) {
-                (new MikrotikHotspot())->getClient($ip_address, $username, $password);
+                try {
+                    (new MikrotikHotspot())->getClient($ip_address, $username, $password);
+                } catch (Throwable $e) {
+                    $testWarning = Lang::T('Router saved, but test connection failed') . ': ' . $e->getMessage();
+                }
             }
             $d = ORM::for_table('tbl_routers')->create();
             $d->name = $name;
@@ -94,7 +99,11 @@ switch ($action) {
             $d->enabled = $enabled;
             $d->save();
 
-            r2(getUrl('routers/edit/') . $d->id(), 's', Lang::T('Data Created Successfully'));
+            $successMsg = Lang::T('Data Created Successfully');
+            if (!empty($testWarning)) {
+                $successMsg .= '<br>' . $testWarning;
+            }
+            r2(getUrl('routers/edit/') . $d->id(), 's', $successMsg);
         } else {
             r2(getUrl('routers/add'), 'e', $msg);
         }
@@ -110,6 +119,7 @@ switch ($action) {
         $coordinates = _post('coordinates');
         $coverage = _post('coverage');
         $enabled = $_POST['enabled'];
+        $testWarning = '';
         $msg = '';
         if (Validator::Length($name, 30, 4) == false) {
             $msg .= 'Name should be between 5 to 30 characters' . '<br>';
@@ -151,7 +161,11 @@ switch ($action) {
         if ($msg == '') {
             run_hook('router_edit'); #HOOK
             if (_post("testIt")) {
-                (new MikrotikHotspot())->getClient($ip_address, $username, $password);
+                try {
+                    (new MikrotikHotspot())->getClient($ip_address, $username, $password);
+                } catch (Throwable $e) {
+                    $testWarning = Lang::T('Router updated, but test connection failed') . ': ' . $e->getMessage();
+                }
             }
             $d->name = $name;
             $d->ip_address = $ip_address;
@@ -182,7 +196,11 @@ switch ($action) {
                 $p->set('routers', $name);
                 $p->save();
             }
-            r2(getUrl('routers/list'), 's', Lang::T('Data Updated Successfully'));
+            $successMsg = Lang::T('Data Updated Successfully');
+            if (!empty($testWarning)) {
+                $successMsg .= '<br>' . $testWarning;
+            }
+            r2(getUrl('routers/list'), 's', $successMsg);
         } else {
             r2(getUrl('routers/edit/') . $id, 'e', $msg);
         }
