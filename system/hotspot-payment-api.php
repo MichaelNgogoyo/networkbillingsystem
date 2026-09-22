@@ -20,6 +20,9 @@ header('Access-Control-Allow-Headers: Content-Type');
 // Load PHPNuxBill configuration
 require_once(__DIR__ . '/../init.php');
 require_once(__DIR__ . '/paymentgateway/mpesa.php');
+if (file_exists(__DIR__ . '/paymentgateway/tuma.php')) {
+    require_once(__DIR__ . '/paymentgateway/tuma.php');
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -118,9 +121,14 @@ try {
     }
 
     // ============================================
-    // PAID PACKAGE - DARAJA M-PESA PAYMENT
+    // PAID PACKAGE - Payment Provider STK Push
     // ============================================
-    $response = initiateM_PesaPayment($phone, $price, $plan, $duration, $deviceMac, $deviceIp, $router, $system, $mockSuccessRequested);
+    $provider = getHotspotPaymentProvider();
+    if ($provider === 'tuma' && function_exists('tuma_initiate_hotspot_stk')) {
+        $response = tuma_initiate_hotspot_stk($phone, $price, $plan, $duration, $deviceMac, $deviceIp, $router, $system, $mockSuccessRequested);
+    } else {
+        $response = initiateM_PesaPayment($phone, $price, $plan, $duration, $deviceMac, $deviceIp, $router, $system, $mockSuccessRequested);
+    }
 
 } catch (Throwable $e) {
     http_response_code(400);
@@ -290,6 +298,13 @@ function resolveCallbackUrl()
 {
     global $config;
 
+    $provider = getHotspotPaymentProvider();
+    if ($provider === 'tuma') {
+        if (!empty($config['tuma_callback_url'])) {
+            return trim($config['tuma_callback_url']);
+        }
+    }
+
     if (!empty($config['mpesa_callback_url'])) {
         return trim($config['mpesa_callback_url']);
     }
@@ -297,7 +312,20 @@ function resolveCallbackUrl()
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
-    return $scheme . '://' . $host . '/system/daraja-callback.php';
+    $callbackFile = ($provider === 'tuma') ? 'tuma-callback.php' : 'daraja-callback.php';
+    return $scheme . '://' . $host . '/system/' . $callbackFile;
+}
+
+function getHotspotPaymentProvider()
+{
+    global $config;
+
+    $provider = strtolower(trim((string)($config['hotspot_payment_provider'] ?? 'mpesa')));
+    if ($provider !== 'tuma' && $provider !== 'mpesa') {
+        $provider = 'mpesa';
+    }
+
+    return $provider;
 }
 
 function runMockSuccessfulPayment($phone, $amount, $plan, $duration, $reference, $mac, $ip, $system, $callbackUrl)
