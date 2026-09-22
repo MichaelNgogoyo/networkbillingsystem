@@ -203,13 +203,13 @@ try {
                     ], 401);
                 }
             }
-            $tur = ORM::for_table('tbl_user_recharges')->whereRaw("BINARY username = '$username'")->find_one();
+            $tur = find_recharge_for_auth($username);
             if (!$tur) {
                 // if check if pppoe_username
                 $c = ORM::for_table('tbl_customers')->select('username')->select('pppoe_password')->whereRaw("BINARY pppoe_username = '$username'")->find_one();
                 if ($c) {
                     $username = $c['username'];
-                    $tur = ORM::for_table('tbl_user_recharges')->whereRaw("BINARY username = '$username'")->find_one();
+                    $tur = find_recharge_for_auth($username);
                 }
             }
             if ($tur) {
@@ -459,6 +459,25 @@ function process_radiust_rest($tur, $code)
         "reply" =>  ["Reply-Message" => ['value' => 'success']]
     ], $attrs);
     show_radius_result($result, $code);
+}
+
+function find_recharge_for_auth($username)
+{
+    $activeRecharge = ORM::for_table('tbl_user_recharges')
+        ->whereRaw("BINARY username = '$username'")
+        ->where('status', 'on')
+        ->order_by_desc('id')
+        ->find_one();
+
+    if ($activeRecharge) {
+        return $activeRecharge;
+    }
+
+    // Fallback to latest historical record so auth can still return a useful expiry message.
+    return ORM::for_table('tbl_user_recharges')
+        ->whereRaw("BINARY username = '$username'")
+        ->order_by_desc('id')
+        ->find_one();
 }
 
 function show_radius_result($array, $code = 200)
